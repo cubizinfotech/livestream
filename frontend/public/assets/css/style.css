@@ -1,0 +1,186 @@
+:root {
+    --theme-primary: #2699fb;
+    --theme-p-light:#cee8fd;
+    --theme-light: #f1f9ff;
+  }
+
+  section.main {
+    max-width: 767px;
+    margin: 50px auto;
+}
+
+.select-wrapper {
+    max-width: 40%;
+    margin-bottom: 20px;
+}
+
+.select-wrapper select {border-color: var(--theme-primary);color: var(--theme-primary);
+    background-image:url(../img/chevron-down.svg) !important;    box-shadow: unset !important;}
+
+.theme-btn {display: inline-block;background: var(--theme-primary);color: #fff;padding: 10px 25px;font-size: 16px;text-decoration: none;border-radius: 2px;line-height: 1;color: #fff;    border: 0;}
+
+.theme-btn:hover {
+    background: #cee8fd;
+    color: var(--theme-primary);
+}
+.theme-btn-alt {display: inline-block;background: #888888;color: #fff;padding: 10px 25px;font-size: 16px;text-decoration: none;border-radius: 2px;line-height: 1;    border: 0;}
+
+.theme-btn-alt:hover {
+    background: #cee8fd;
+    color: #888888;
+}
+
+.btn-wrapper {
+    margin: 10px 0;
+}
+
+ul.church-list,ul.video-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+
+ul.church-list li.church-list-item,ul.video-list li.video-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background: var(--theme-light);
+}
+
+li.church-list-item .cl-content {}
+
+li.church-list-item .cl-content h4,
+li.video-list-item .cl-content h4 {
+    margin: 0 0 10px 0;
+    font-size: 22px;
+    color: var(--theme-primary);
+    font-weight: 600;
+    line-height: 28px;
+    text-transform: capitalize;
+}
+
+li.church-list-item .cl-content p,
+li.video-list-item .cl-content p {
+    margin: 0 0 0 0;
+    font-size: 16px;
+    color: var(--theme-primary);
+    font-weight: 400;
+    line-height: 1;
+}
+
+li .cl-action a {
+    margin-left: 15px;
+    font-size: 20px;
+    line-height: 1;
+    display: inline-flex;
+    border-radius: 50%;
+    color: var(--theme-primary);
+    padding: 2px;
+}
+
+li .cl-action a.reload-icon {
+    color: #fff;
+    background: var(--theme-primary);
+}
+ul.church-list li + li,ul.video-list li + li {
+    margin-top: 15px;
+}
+.player-icon a {
+    margin-right: 15px;
+    font-size: 20px;
+    line-height: 1;
+    display: inline-flex;
+    border-radius: 50%;
+    color: var(--theme-primary);
+    padding: 2px;
+}
+
+.cl-action a svg,.player-icon a svg {
+    width: 18px;
+    height: 18px;
+}
+
+.cl-action {}
+
+ul.video-list li.video-list-item {
+    justify-content: start;
+}
+
+ul.video-list li.video-list-item >div {
+    flex: 1;
+    /* max-width: max-content; */
+}
+
+ul.video-list li.video-list-item div:first-child,ul.video-list li.video-list-item div:last-child {
+    max-width: max-content;
+}
+
+li.video-list-item .cl-content h4 {
+    font-size: 18px;
+    line-height: 20px;
+}
+.form-btn button {
+    min-width: 115px;
+    line-height: 22px;
+}
+
+#addchurch .modal-body {
+    padding: 50px;
+}
+
+#addchurch .modal-body h4.form-title {
+    color: var(--theme-primary);
+    margin: 0 0 15px 0;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+
+form.add-form input {
+    color: var(--theme-primary);
+    border-color: var(--theme-primary);
+    margin: 0 0 15px 0;
+    padding: 10px 15px;
+    line-height: 30px;
+    font-size: 18px;
+    outline: 0;
+    box-shadow: unset !important;
+}
+.video-wrapper{
+    position: relative;
+}
+.video-wrapper video.video {
+    width: 100%;
+    opacity:0;
+    width:100%;
+    transition: 1s;
+    position:absolute;
+    z-index:-1;
+}
+.cover {
+    /* background-image: url('https://images.unsplash.com/photo-1486375680560-d2653bf9c829?ixlib=rb-0.3.5&q=85&fm=jpg&crop=entropy&cs=srgb&s=4f2dcc9ba4133c23f906d19e10950976');
+    background-size:cover;
+    background-repeat:no-repeat; */
+    width:100%;
+    padding-bottom:50%;
+    margin-bottom:50px;
+    background: #bce0fd;
+    position: relative;
+    cursor: pointer;
+}
+.cover:before {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    background: TRANSPARENT;
+    height: 0;
+    width: 0;
+    content: "";
+    border-top: 25px solid transparent;
+    border-bottom: 25px solid transparent;
+    border-left: 40px solid #fff;
+    transform: translate(-50%, -50%);
+}

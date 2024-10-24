@@ -1,0 +1,33 @@
+<?php
+
+// header('HTTP/1.1 200 OK');
+// header('HTTP/1.1 401 Unauthorized');
+
+$streamKey = $_REQUEST['name'];
+$streamCall = $_REQUEST['call'];
+
+$logFile = 'stream.log';
+$logMessage = '[' . date('Y-m-d H:i:s') . '] streamBlocked ::: ' . json_encode($_REQUEST) . " \n \n ";
+file_put_contents($logFile, $logMessage, FILE_APPEND);
+
+if ($streamKey == "stream") {
+    echo json_encode([
+        'status' => true,
+        'message' => 'Stream blocked successfully.',
+        'result' => $streamKey
+    ]);
+    header('HTTP/1.1 200 OK');
+    return;
+} 
+else {
+    echo json_encode([
+        'status' => false,
+        'message' => 'Something went wrong.',
+        'test' => "founder",
+        'result' => $streamKey
+    ]);
+    header('HTTP/1.1 401 Unauthorized');
+    return;
+}
+
+?>

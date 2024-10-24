@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  rtmp:
+    container_name: rtmp_server
+    build: ./
+    ports:
+      - "${RTMP_PORT}:1919"
+      - "${HTTP_PORT}:8989"
+    environment:
+      - RTMP_PORT=${RTMP_PORT}
+      - HTTP_PORT=${HTTP_PORT}
+      - MAX_VIEWERS=${MAX_VIEWERS}
+      - MAX_STREAMING_TIME=${MAX_STREAMING_TIME}
+      - ON_PUBLISH=${ON_PUBLISH}
+      - ON_PUBLISH_DONE=${ON_PUBLISH_DONE}
+      - ON_RECORD_DONE=${ON_RECORD_DONE}
+      - STREAM_BLOCKED=${STREAM_BLOCKED}
+      - STREAM_LOG=${STREAM_LOG}
+    volumes:
+      - ./data:/tmp/hls
+      - ./record:/record
+      - ./timeout.sh:/timeout.sh
+    entrypoint: 
+      # - /bin/bash -c "/timeout.sh & nginx -g 'daemon off;'"
+    restart: always
+    command: /bin/sh -c "nginx -g 'daemon off;'"
+    networks:
+      - livestream
+
+networks:
+  livestream:
+    driver: bridge

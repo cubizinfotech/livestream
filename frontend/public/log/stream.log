@@ -1,0 +1,36 @@
+[2024-10-24 11:14:34] streamStart ::: []
+
+[2024-10-24 12:17:25] streamStart ::: {"name":"stream","call":"publish"}
+
+[2024-10-24 12:18:10] streamStart ::: {"name":"stream","call":"publish_done"}
+
+[2024-10-24 12:18:54] streamStop ::: {"name":"stream","call":"publish_done"}
+
+[2024-10-24 12:19:50] streamStop ::: {"name":"stream","call":"publish_done"}
+
+[2024-10-24 12:22:22] streamStop ::: {"name":"stream","call":"publish_done"}
+
+[2024-10-24 12:22:28] streamStart ::: {"name":"stream","call":"publish"}
+
+[2024-10-24 12:22:32] streamStop ::: {"name":"stream","call":"publish_done"}
+
+[2024-10-24 12:23:33] streamRecord ::: {"name":"stream","call":"record_done","path":"test\/aa.flv"}
+
+[2024-10-24 12:24:57] streamRecord ::: {"name":"stream","call":"record_done","path":"test\/aa.flv"}
+
+[2024-10-24 12:25:46] streamRecord ::: {"name":"stream"}
+
+[2024-10-24 12:26:58] streamBlocked ::: {"name":"stream"}
+
+[2024-10-24 12:27:22] streamStart ::: {"name":"stream","call":"publish"}
+
+[2024-10-24 12:27:30] streamBlocked ::: {"name":"stream"}
+
+[2024-10-24 12:28:05] streamBlocked ::: {"name":"stream"}
+
+[2024-10-24 12:28:44] streamStart ::: {"name":"stream","call":"publish"}
+
+[2024-10-24 12:29:07] streamRecord ::: {"name":"stream","call":"record_done"}
+
+[2024-10-24 12:29:09] streamRecord ::: {"name":"stream","call":"record_done","path":"test\/aa.flv"}
+
