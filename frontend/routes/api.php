@@ -22,10 +22,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::group(['prefix' => 'stream'], function () {
-    Route::post('start', [ApiController::class, 'streamStart']);
-    Route::post('stop', [ApiController::class, 'streamStop']);
-    Route::post('record', [ApiController::class, 'streamRecord']);
-    Route::post('blocked', [ApiController::class, 'streamBlocked']);
+    Route::any('start', [ApiController::class, 'streamStart']);
+    Route::any('stop', [ApiController::class, 'streamStop']);
+    Route::any('record', [ApiController::class, 'streamRecord']);
+    Route::any('blocked', [ApiController::class, 'streamBlocked']);
 
     Route::get('live/{id}', [ApiController::class, 'shareLive'])->name('live.share');
     Route::get('record/{id}', [ApiController::class, 'shareRecord'])->name('record.share');
