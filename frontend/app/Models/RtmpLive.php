@@ -16,7 +16,7 @@ class RtmpLive extends Model
         'rtmp_id',
         'ip_address',
         'timezone',
-        'datetime',
+        'streaming_datetime',
         'status',
     ];
 

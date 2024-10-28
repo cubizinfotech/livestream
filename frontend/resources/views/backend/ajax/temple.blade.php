@@ -7,7 +7,7 @@
 @if($type == "showTempleRecords")
     <ul class="church-list">
         @foreach ($records as $key => $value)
-            <li class="church-list-item delete_record_{{ $value->id }}">
+            <li class="church-list-item delete_record_{{ $value->id }} {{ (isset($value->rtmp_live->id) && $value->rtmp_live->status == 0) ? 'border border-danger' : '' }}">
                 <div class="cl-content">
                     <h4 class="cursor-pointer"><a href="{{ route('temple.videos', $value->stream_key) }}" target="">{{ $value->name }}</a></h4>
                     <p><b>RTMP URL:</b> {{ $value->rtmp_url }}</p>
@@ -31,11 +31,25 @@
                                 d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z" />
                         </svg>
                     </a>
-                    <a href="#"
+                    <a href="#" style="margin-right: -30px;"
                         onClick="share('{{ $value->id }}', `{{ route('live.share', $value->id) }}`)"
                         class="copy-icon share share_{{ $value->id }}" data-toggle="tooltip" data-placement="top" title="Copy & Share">
                         <img width="40%" src="{{ asset('assets') }}/img/copy.gif" alt="">
                     </a>
+                    @if(isset($value->rtmp_live->id) && $value->rtmp_live->status == 0)
+                        <a href="#"
+                            onClick="unblocked('{{ $value->id }}', `{{ route('stream.unblock') }}`)"
+                            class="copy-icon share unblocked_{{ $value->id }} text-danger" data-toggle="tooltip" data-placement="top" title="Unblock Stream">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-unblock" viewBox="0 0 16 16">
+                                <!-- Circle outline -->
+                                <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="2" fill="none"></circle>
+                                <!-- Diagonal line to indicate "unblocking" -->
+                                <line x1="3" y1="3" x2="13" y2="13" stroke="currentColor" stroke-width="2"></line>
+                                <!-- Checkmark to indicate "unblock" -->
+                                <path d="M6 8l2 2 4-4" stroke="currentColor" stroke-width="2" fill="none"></path>
+                            </svg>
+                        </a>
+                    @endif
                 </div>
                 <div class="cl-action hide_class show_class_{{ $value->id }} d-none">
 

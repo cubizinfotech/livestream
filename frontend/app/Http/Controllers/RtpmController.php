@@ -21,7 +21,7 @@ class RtpmController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        date_default_timezone_set(env('TIMEZONE'));
+        date_default_timezone_set(env('TIMEZONE', 'Asia/Kolkata'));
     }
 
     public function home() 
@@ -38,11 +38,11 @@ class RtpmController extends Controller
         if($request->ajax() && !empty($request->type) && $request->type == "showTempleRecords") {
 
             if(!empty($id)) {
-                $records = Rtmp::where('created_by', $created_by)->where('status', 1)->where('id', $id)->get();
+                $records = Rtmp::with('rtmp_live')->where('created_by', $created_by)->where('status', 1)->where('id', $id)->get();
                 return view("backend.ajax.temple", compact('records', 'type'));
             }
             else {
-                $records = Rtmp::where('created_by', $created_by)->where('status', 1)->orderBy('id', 'DESC')->get();
+                $records = Rtmp::with('rtmp_live')->where('created_by', $created_by)->where('status', 1)->orderBy('id', 'DESC')->get();
                 return view("backend.ajax.temple", compact('records', 'type'));
             }
         }
@@ -279,7 +279,10 @@ class RtpmController extends Controller
 
         $created_by = Auth::user()->id;
         $showAllTempleNameRecords = Rtmp::where('created_by', $created_by)->where('status', 1)->orderBy('id', 'DESC')->get();
-        $records = Rtmp::with('rtmp_recording')->where('stream_key', $stream_key)->where('status', 1)->first();
+        // $records = Rtmp::with('rtmp_recording')->where('stream_key', $stream_key)->where('status', 1)->first();
+        $records = Rtmp::whereHas('rtmp_recording', function($query) {
+            $query->where('status', 1);
+        })->where('stream_key', $stream_key)->where('status', 1)->first();
         
         if(empty($records->id)) {
             abort(404);
@@ -287,6 +290,11 @@ class RtpmController extends Controller
         else {
             return view("backend.video", compact('showAllTempleNameRecords', 'records', 'stream_key'));
         }
+    }
+
+    public function unblock(Request $request) {
+        $data = RtmpLive::where('rtmp_id', $request->id)->delete();
+        return response()->json([], 200);
     }
 
     public function timezone(Request $request) {

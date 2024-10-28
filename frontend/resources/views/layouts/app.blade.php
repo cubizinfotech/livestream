@@ -335,6 +335,27 @@
             // $('.share').attr('data-bs-original-title', 'Copy & Share');
             // $('.share_'+id).attr('data-bs-original-title', 'Copied').tooltip('show');
         }
+
+        function unblocked(id, url) {
+            try {
+                $.ajax({
+                    url: url,
+                    method: "POST",
+                    data: { id },
+                    success: function(response) {
+                        $(".unblocked_"+id).remove();
+                        $(".delete_record_"+id).removeClass('border border-danger');
+                        toster("Success", "Unblock stream successfully!", "success");
+                        // console.log(response);
+                    },
+                    error: function(error) {
+                        console.log(error);
+                    }
+                });
+            } catch (err) {
+                console.error("Error in unblock: ", err);
+            }
+        }
     </script>
 
     @yield('scripts')

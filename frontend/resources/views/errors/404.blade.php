@@ -1,4 +1,4 @@
-@extends("backend.layouts.app")
+@extends("layouts.app")
 
 @section("css")
 <!-- Google font -->

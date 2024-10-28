@@ -27,6 +27,7 @@ Route::group(['prefix' => 'admin'], function(){
     Route::resource("rtmps", RtpmController::class);
     Route::get('/home', [RtpmController::class, 'home'])->name('admin.home');
     Route::get('/videos/{stream_key}', [RtpmController::class, 'videos'])->name('temple.videos');
+    Route::post('/stream/unblock', [RtpmController::class, 'unblock'])->name('stream.unblock');
 
     Route::group(['prefix' => 'video'], function(){
         Route::get('/shows/{id}', [RtpmController::class, 'shows'])->name('video.show');

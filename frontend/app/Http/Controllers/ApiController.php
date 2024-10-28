@@ -16,7 +16,7 @@ class ApiController extends Controller
 {
     public function __constructor()
     {
-        date_default_timezone_set(env('TIMEZONE'));
+        date_default_timezone_set(env('TIMEZONE', 'Asia/Kolkata'));
     }
     
     public function streamStart(Request $request) 
@@ -126,7 +126,7 @@ class ApiController extends Controller
         $this->logs([$id], 'shareLive');
 
         try {
-            $live = RtmpLive::with('rtmp')->where('status', 1)->where('id', $id)->first();
+            $live = RtmpLive::with('rtmp')->where('status', 1)->where('rtmp_id', $id)->first();
             if(empty($live->id)) {
                 abort(404);
             }

@@ -20,7 +20,7 @@
                         <a class="video-play-btn" href="#"></a>
                     </div>
                 </div>
-                <input type="hidden" name="stream_url" id="stream_url" value="{{ $live->live_url }}">
+                <input type="hidden" name="stream_url" id="stream_url" value="{{ $live->rtmp->live_url }}">
             </div>
         </div>
     </section>

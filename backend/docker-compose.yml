@@ -20,8 +20,7 @@ services:
       - ./data:/tmp/hls
       - ./record:/record
       - ./timeout.sh:/timeout.sh
-    entrypoint: 
-      # - /bin/bash -c "/timeout.sh & nginx -g 'daemon off;'"
+    # entrypoint: /bin/bash -c "/timeout.sh & nginx -g 'daemon off;'"
     restart: always
     command: /bin/sh -c "nginx -g 'daemon off;'"
     networks:
