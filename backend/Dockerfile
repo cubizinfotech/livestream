@@ -6,4 +6,4 @@ COPY ./html/index.html /www/
 
 RUN apt-get update && apt-get install -y curl
 
-EXPOSE 1920
+EXPOSE 1919

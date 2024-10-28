@@ -4,8 +4,8 @@ services:
     container_name: rtmpServer
     build: ./
     ports:
-      - "${RTMP_PORT}:1920"
-      - "${HTTP_PORT}:8980"
+      - "${RTMP_PORT}:1919"
+      - "${HTTP_PORT}:8989"
     environment:
       - RTMP_PORT=${RTMP_PORT}
       - HTTP_PORT=${HTTP_PORT}
