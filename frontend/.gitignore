@@ -1,5 +1,4 @@
 /node_modules
-/public/hot
 /public/storage
 /storage/*.key
 /vendor
@@ -15,5 +14,4 @@ yarn-error.log
 /.vscode
 /zbkp
 /storage
-fileZilla.txt
-Live1.ppk
+/public/logs

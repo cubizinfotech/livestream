@@ -188,7 +188,7 @@ class ApiController extends Controller
         ];
         RtmpLogs::create($insertRtmpLogData);
 
-        $logFile = public_path('log/stream.log');
+        $logFile = public_path('logs/stream.log');
         $logMessage = '[' . date('Y-m-d H:i:s') . '] ' . $type . ' ::: ' . json_encode($req) . "\n\n";
         file_put_contents($logFile, $logMessage, FILE_APPEND);
         return true;
