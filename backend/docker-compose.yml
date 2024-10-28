@@ -1,11 +1,11 @@
 version: "3.9"
 services:
   rtmp:
-    container_name: rtmp_server
+    container_name: rtmpServer
     build: ./
     ports:
-      - "${RTMP_PORT}:1919"
-      - "${HTTP_PORT}:8989"
+      - "${RTMP_PORT}:1920"
+      - "${HTTP_PORT}:8980"
     environment:
       - RTMP_PORT=${RTMP_PORT}
       - HTTP_PORT=${HTTP_PORT}
