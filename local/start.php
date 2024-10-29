@@ -23,8 +23,6 @@ else {
     echo json_encode([
         'status' => false,
         'message' => 'Something went wrong.',
-        'test' => "founder",
-        'result' => $streamKey
     ]);
     header('HTTP/1.1 401 Unauthorized');
     return;

@@ -13,6 +13,7 @@ class RtmpLogs extends Model
 
     protected $fillable = [
         'log_datetime',
+        'type',
         'payload',
     ];
 

@@ -11,6 +11,8 @@ use App\Models\RtmpRecording;
 use App\Models\RtmpBlocked;
 use App\Models\RtmpLogs;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\App;
+use App\Jobs\ProcessStream;
 
 class ApiController extends Controller
 {
@@ -86,6 +88,8 @@ class ApiController extends Controller
                     'status' => 0
                 ];
                 RtmpRecording::create($insertRtmpRecordData);
+                // ProcessStream::dispatch($request->all())->delay(now()->addMinutes(2));
+                ProcessStream::dispatch($request->all());
                 return response()->json(['status' => true, 'message' => 'Stream record successfully!'], 200);
             }
             else {
@@ -151,8 +155,35 @@ class ApiController extends Controller
         }
     }
 
-    public function streamS3Bucket()
+    public function TestingAPI()
     {
+        /*
+        // ------------------------Recording---------------------------------
+        $recData = RtmpRecording::where('status', 0)->first();
+        // echo "<pre>";
+        // print_r($recData);
+        // die;
+        $data = [
+            'name' => 'IkSjJKBTpQ1UW',
+            'path' => $recData->recording_path,
+        ];
+        // $this->temp_handle($data);
+        // ProcessStream::dispatch($data)->delay(now()->addMinutes(1));
+        ProcessStream::dispatch($data);
+        return response()->json($data, 200);
+        // ------------------------Recording---------------------------------
+        */
+
+        
+        // ------------------------S3 bucket---------------------------------
+        $folderPath = "storage/record/IkSjJKBTpQ1UW";
+        if (Storage::disk('s3')->exists($folderPath)) {
+            // Storage::disk('s3')->deleteDirectory($folderPath);
+            // echo "Folder '$folderPath' deleted successfully.";
+        } else {
+            // echo "Folder '$folderPath' does not exist.";
+        }
+
         $folderPath = 'opt/data/hls';
         if (!Storage::disk('s3')->exists($folderPath)) {
             // Folder doesn't exist, create it
@@ -167,7 +198,7 @@ class ApiController extends Controller
         foreach ($files as $file) {
             // Storage::disk('s3')->delete($file);
         }
-
+       
         $folders = Storage::disk('s3')->directories();
         foreach ($folders as $folder) {
             // Storage::disk('s3')->deleteDirectory($folder);
@@ -175,8 +206,11 @@ class ApiController extends Controller
 
         echo "<pre>";
         print_r($files);
-        print_r($folders);
         die;
+        // ------------------------S3 bucket---------------------------------
+        
+
+        return response()->json(['status' => true, 'message' => 'Nothing testing!'], 200);
     }
 
     protected function logs($req, $type) 
@@ -191,6 +225,204 @@ class ApiController extends Controller
         $logFile = public_path('logs/stream.log');
         $logMessage = '[' . date('Y-m-d H:i:s') . '] ' . $type . ' ::: ' . json_encode($req) . "\n\n";
         file_put_contents($logFile, $logMessage, FILE_APPEND);
+        return true;
+    }
+
+    protected function temp_handle($data)
+    {
+        \Log::info('Processing task with data: ', [json_encode($data)]);
+
+        if (!empty($data['name']) && !empty($data['path'])) {
+
+            $streamKey = $data['name'];
+            $streamPath = $data['path'];
+
+            $videoUrl = env('BACKEND_SERVER_URL').$streamPath;
+            $fileName = explode("/", $streamPath)[1];
+            $fileNameExplode = explode(".", $fileName);
+            $newFileName = $fileNameExplode[0].'.mp4';
+            $storagePath = public_path("storage/temp_rec/$fileName");
+
+            $returnData = $this->downloadTempRecord($videoUrl, $storagePath);
+            sleep(1);
+            if (file_exists($storagePath)) {
+
+                if (!App::environment('local')) {
+                    chmod($storagePath, 0777);
+                }
+
+                // Create RTMP directoty
+                $streamDir = public_path('storage/record/'.$streamKey);
+                if (!is_dir($streamDir)) {
+                    mkdir($streamDir);     
+                }
+
+                $destinationPath = $streamDir . '/' . $newFileName; // Record folder path
+                
+                // START ffmpeg convert flv to mp4 
+                $exitStatus = 0;
+                if (!App::environment('local')) {
+                    $command = 'ffmpeg';
+                } else {
+                    $command = public_path('liberary/ffmpeg/bin/ffmpeg.exe');
+                }
+                $ffmpegCommand = "{$command} -i {$storagePath} -c:v libx264 -c:a aac -strict experimental {$destinationPath}";
+                if (!file_exists($destinationPath)) {
+                    exec($ffmpegCommand, $output, $exitStatus);
+                }
+                // END ffmpeg convert flv to mp4
+
+                if ($exitStatus == 0) {
+
+                    if (!App::environment('local')) {
+                        chmod($destinationPath, 0777);
+                    }
+
+                    // if ($_SERVER['SERVER_ADDR'] != '127.0.0.1' && $_SERVER['SERVER_NAME'] != 'localhost') {
+                    if (!App::environment('local')) {
+                        
+                        // File upload from S3 bucket
+                        try {
+                            $folderPath = 'storage/record/'.$streamKey;
+                            if (!Storage::disk('s3')->exists($folderPath)) {
+                                Storage::disk('s3')->makeDirectory($folderPath);
+                            }
+                
+                            $s3FolderPath = $folderPath.'/'.$newFileName; // S3 folder path
+                
+                            Storage::disk('s3')->put($s3FolderPath, file_get_contents($destinationPath));
+                            $s3FileUrl = Storage::disk('s3')->url($s3FolderPath);
+
+                            $updateData = [
+                                'recording_url' => "storage/record/$streamKey/$newFileName",
+                                'status' => 1,
+                            ];
+                            RtmpRecording::where('recording_path', $streamPath)->update($updateData);
+                            unlink($storagePath);
+                            unlink($destinationPath);
+                            $this->deleteBackendFile($streamPath);
+                            return response()->json(['status' => true, 'message' => "Process Completed (S3)."], 200);
+                        }
+                        catch (Aws\S3\Exception\S3Exception $e) {
+                            $logData = [
+                                'message' => $e->getMessage(),
+                            ];
+                            $this->logs($logData, 'S3uploadError1');
+                            return response()->json(['status' => false, 'message' => "S3 file upload error 1!"], 404);
+                        } 
+                        catch (\Throwable $th) {
+                            $logData = [
+                                'message' => $th->getMessage(),
+                            ];
+                            $this->logs($logData, 'S3uploadError2');
+                            return response()->json(['status' => false, 'message' => "S3 file upload error 2!"], 404);
+                        }
+                    } 
+                    else {
+                        $updateData = [
+                            'recording_url' => "storage/record/$streamKey/$newFileName",
+                            'status' => 1,
+                        ];
+                        RtmpRecording::where('recording_path', $streamPath)->update($updateData);
+                        unlink($storagePath);
+                        $this->deleteBackendFile($streamPath);
+                        return response()->json(['status' => true, 'message' => "Process Completed (local)."], 200);
+                    }
+                } else {
+                    $logData = [
+                        'type' => 'ffmpeg command',
+                        'command' => $ffmpegCommand,
+                        'status' => $exitStatus,
+                        'inputFile' => $storagePath,
+                        'outputFile' => $destinationPath,
+                    ];
+                    $this->logs($logData, 'ffmpeg');
+                    return response()->json(['status' => false, 'message' => "ffmpeg command not working!"], 404);
+                }
+            } 
+            else {
+                $logData = [
+                    'message' => 'Temporary downloading not working!',
+                ];
+                $this->logs($logData, 'tempDownload');
+                return response()->json(['status' => false, 'message' => "Temporary downloading not working!"], 404);
+            }
+        }
+        else {
+            $logData = [
+                'message' => 'Required field missing (like name, path)',
+            ];
+            $this->logs($logData, 'requiredField');
+            return response()->json(['status' => false, 'message' => "Something went wrong!"], 404);
+        }
+    }
+
+    protected function downloadTempRecord($url, $destinationPath)
+    {
+        $ch = curl_init($url);
+        $fp = fopen($destinationPath, 'wb');
+
+        // Set Curl options for large file transfer
+        curl_setopt($ch, CURLOPT_FILE, $fp);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 0); // Set timeout to 0 for no timeout
+        curl_setopt($ch, CURLOPT_BUFFERSIZE, 8192); // Set buffer size to 8KB
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Disable SSL verification
+
+        // Execute the request
+        curl_exec($ch);
+
+        // Check for errors
+        if (curl_errno($ch)) {
+            $error_msg = curl_error($ch);
+            $logData = [
+                'message' => "cURL Error: $error_msg",
+            ];
+            $this->logs($logData, 'downloadTempRecord');
+        } else {
+            // echo "File downloaded successfully.";
+        }
+
+        // Close resources
+        curl_close($ch);
+        fclose($fp);
+
+        return true;
+    }
+
+    protected function deleteBackendFile($path)
+    {
+        $url = env('BACKEND_SERVER_URL').'api.php';
+        $data = [
+            'path' => $path,
+        ];
+
+        // Initialize cURL session
+        $ch = curl_init($url);
+
+        // Configure cURL options for a POST request
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data)); // Send data as URL-encoded form
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return the response instead of outputting it
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Disable SSL verification (use with caution)
+
+        // Execute the request
+        $response = curl_exec($ch);
+
+        // Check for errors
+        if (curl_errno($ch)) {
+            $error_msg = curl_error($ch);
+            $logData = [
+                'message' => "cURL Error: $error_msg",
+            ];
+            $this->logs($logData, 'deleteBackendFile');
+        } else {
+            // echo "Response from API: $response";
+        }
+
+        // Close the cURL session
+        curl_close($ch);
+
         return true;
     }
 }

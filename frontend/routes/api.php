@@ -29,5 +29,5 @@ Route::group(['prefix' => 'stream'], function () {
 
     Route::get('live/{id}', [ApiController::class, 'shareLive'])->name('live.share');
     Route::get('record/{id}', [ApiController::class, 'shareRecord'])->name('record.share');
-    Route::get('filter/s3', [ApiController::class, 'streamS3Bucket']);
+    Route::any('test', [ApiController::class, 'TestingAPI']);
 });
