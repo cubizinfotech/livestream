@@ -22,7 +22,6 @@
                 </div>
 
                 <div class="col-12">
-
                     <ul class="video-list">
                         @if(count($records->rtmp_recording) > 0)
                         @foreach ($records->rtmp_recording as $key => $value)

@@ -6,8 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Rtmp;
 use App\Models\RtmpLive;
-use App\Models\CheckCopyright;
+use App\Models\RtmpComplete;
 use App\Models\RtmpRecording;
+use App\Models\RtmpBlocked;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -15,6 +16,7 @@ use Stevebauman\Location\Facades\Location;
 use Carbon\Carbon;
 use File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\App;
 
 class RtpmController extends Controller
 {
@@ -146,9 +148,9 @@ class RtpmController extends Controller
 
     public function destroy(Request $request, $id) {
 
-        $get_rtmp = Rtmp::where(['id' => $id, 'status' => 1])->first();
+        $getRtmp = Rtmp::where(['id' => $id, 'status' => 1])->first();
 
-        if(empty($get_rtmp)) {
+        if(empty($getRtmp)) {
             return response()->json([
                 'status' => false,
                 'message' => 'Rtmp not found!!!.',
@@ -156,49 +158,45 @@ class RtpmController extends Controller
             ]);
         }
 
-        $folder_path = public_path("storage/copyright/".$get_rtmp->stream_key);
-        if (is_dir($folder_path)) {
-            array_map('unlink', glob("$folder_path/*.*"));
-            rmdir($folder_path);    
-        }
+        $folderName = $getRtmp->stream_key;
+        $folderPath = public_path("storage/record/$folderName");
 
-        if ($_SERVER['SERVER_ADDR'] == '127.0.0.1' || $_SERVER['SERVER_NAME'] == 'localhost') {
-            $folder_path = public_path("storage/recording/".$get_rtmp->stream_key);
-            if (is_dir($folder_path)) {
-                array_map('unlink', glob("$folder_path/*.*"));
-                rmdir($folder_path);    
+        // if ($_SERVER['SERVER_ADDR'] == '127.0.0.1' || $_SERVER['SERVER_NAME'] == 'localhost') {
+        if (App::environment('local')) {
+            if (is_dir($folderPath)) {
+                array_map('unlink', glob("$folderPath/*.*"));
+                rmdir($folderPath);
             }
-        } else {
-            // Replace with the S3 folder path
-            $folder_path = "storage/recording/".$get_rtmp->stream_key;
-            // List all files in the folder
-            $files = Storage::disk('s3')->files($folder_path);
-            // Delete each file in the folder
-            foreach ($files as $file) {
-                Storage::disk('s3')->delete($file);
+        } 
+        else {
+            try {
+                rmdir($folderPath);
+                $folderPath = "storage/record/$folderName";
+                $files = Storage::disk('s3')->files($folderPath);
+                foreach ($files as $file) {
+                    Storage::disk('s3')->delete($file);
+                }
+                Storage::disk('s3')->deleteDirectory($folderPath);
             }
-            Storage::disk('s3')->deleteDirectory($folder_path);
+            catch (Aws\S3\Exception\S3Exception $e) {
+                return response()->json(['status' => false, 'message' => "S3 file upload error 1!", 'message2' => $e->getMessage()], 404);
+            } 
+            catch (\Throwable $th) {
+                return response()->json(['status' => false, 'message' => "S3 file upload error 2!", 'message2' => $th->getMessage()], 404);
+            }
         }
 
         Rtmp::where('id', $id)->delete();
         RtmpLive::where('rtmp_id', $id)->delete();
-        RtmpLive::where('rtmp_id', $id)->delete();
-        CheckCopyright::where('rtmp_id', $id)->delete();
+        RtmpComplete::where('rtmp_id', $id)->delete();
         RtmpRecording::where('rtmp_id', $id)->delete();
+        RtmpBlocked::where('rtmp_id', $id)->delete();
 
-        if (isset($get_rtmp)) {
-            return response()->json([
-                'status' => true,
-                'message' => 'Rtmp deleted successfully.',
-                'result' => $folder_path
-            ]);
-        } else {
-            return response()->json([
-                'status' => false,
-                'message' => 'Something went wrong.',
-                'result' => $folder_path
-            ]);
-        }
+        return response()->json([
+            'status' => true,
+            'message' => 'Rtmp deleted successfully.',
+            'result' => $folderPath
+        ]);
     }
 
     public function shows(Request $request, $id) {
@@ -225,8 +223,8 @@ class RtpmController extends Controller
 
     public function delete(Request $request, $id) {
 
-        $get_rtmp_recording = RtmpRecording::with('rtmp')->where('id', $id)->first();
-        if(empty($get_rtmp_recording)) {
+        $rtmpRecording = RtmpRecording::with('rtmp')->where('id', $id)->first();
+        if(empty($rtmpRecording)) {
             return response()->json([
                 'status' => false,
                 'message' => 'Video not found!!!.',
@@ -234,45 +232,43 @@ class RtpmController extends Controller
             ]);
         }
 
-        $delete = RtmpRecording::where('id', $id)->delete();
-        $count = RtmpRecording::where(['rtmp_id' => $get_rtmp_recording->rtmp_id, 'status' => 1])->get()->count();
+        $folderName = $rtmpRecording->rtmp->stream_key;
+        $folderPath = public_path("storage/record/$folderName");
+        $count = RtmpRecording::where(['rtmp_id' => $rtmpRecording->rtmp_id, 'status' => 1])->get()->count();
 
-        if ($_SERVER['SERVER_ADDR'] == '127.0.0.1' || $_SERVER['SERVER_NAME'] == 'localhost') {
-            $file_path = public_path($get_rtmp_recording->recording_url);
-            $folder_path = public_path("storage/recording/".$get_rtmp_recording->rtmp->stream_key);
-    
-            if (File::exists($file_path)) {
-                // File::delete($file_path);
-                unlink($file_path);
-            }
-            if($count == 0) {
-                rmdir($folder_path);
+        // if ($_SERVER['SERVER_ADDR'] == '127.0.0.1' || $_SERVER['SERVER_NAME'] == 'localhost') {
+        if (App::environment('local')) {
+            $filePath = public_path($rtmpRecording->recording_url);
+            if (File::exists($filePath)) {
+                // File::delete($filePath);
+                unlink($filePath);
             }
         } else {
-            $file_path = $get_rtmp_recording->recording_url;
-            $folder_path = "storage/recording/".$get_rtmp_recording->rtmp->stream_key;
-
-            if (Storage::disk('s3')->exists($file_path)) {
-                Storage::disk('s3')->delete($file_path);
+            try {
+                if (Storage::disk('s3')->exists($rtmpRecording->recording_url)) {
+                    Storage::disk('s3')->delete($rtmpRecording->recording_url);
+                }
+                if($count == 1) {
+                    Storage::disk('s3')->deleteDirectory("storage/record/$folderName");
+                }
             }
-            if($count == 0) {
-                Storage::disk('s3')->deleteDirectory($folder_path);
+            catch (Aws\S3\Exception\S3Exception $e) {
+                return response()->json(['status' => false, 'message' => "S3 file upload error 1!", 'message2' => $e->getMessage()], 404);
+            } 
+            catch (\Throwable $th) {
+                return response()->json(['status' => false, 'message' => "S3 file upload error 2!", 'message2' => $th->getMessage()], 404);
             }
         }
 
-        if (isset($delete)) {
-            return response()->json([
-                'status' => true,
-                'message' => 'Video deleted successfully.',
-                'result' => $count
-            ]);
-        } else {
-            return response()->json([
-                'status' => false,
-                'message' => 'Something went wrong.',
-                'result' => $count
-            ]);
+        RtmpRecording::where('id', $id)->delete();
+        if($count == 1) {
+            rmdir($folderPath);
         }
+        return response()->json([
+            'status' => true,
+            'message' => 'Video deleted successfully.',
+            'result' => $count
+        ]);
     }
 
     public function videos(Request $request, $stream_key) {

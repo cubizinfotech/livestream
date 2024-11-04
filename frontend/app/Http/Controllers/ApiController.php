@@ -159,17 +159,17 @@ class ApiController extends Controller
     {
         /*
         // ------------------------Recording---------------------------------
-        $recData = RtmpRecording::where('status', 0)->first();
+        $recData = RtmpRecording::with('rtmp')->where('status', 0)->first();
         // echo "<pre>";
-        // print_r($recData);
+        // print_r($recData->toArray());
         // die;
         $data = [
-            'name' => 'IkSjJKBTpQ1UW',
+            'name' => $recData->rtmp->stream_key,
             'path' => $recData->recording_path,
         ];
-        // $this->temp_handle($data);
+        $this->temp_handle($data);
         // ProcessStream::dispatch($data)->delay(now()->addMinutes(1));
-        ProcessStream::dispatch($data);
+        // ProcessStream::dispatch($data);
         return response()->json($data, 200);
         // ------------------------Recording---------------------------------
         */
@@ -241,26 +241,28 @@ class ApiController extends Controller
             $fileName = explode("/", $streamPath)[1];
             $fileNameExplode = explode(".", $fileName);
             $newFileName = $fileNameExplode[0].'.mp4';
-            $storagePath = public_path("storage/temp_rec/$fileName");
 
-            $returnData = $this->downloadTempRecord($videoUrl, $storagePath);
-            sleep(1);
+            // Create directoty
+            $streamDir = public_path('storage/record/'.$streamKey);
+            if (!is_dir($streamDir)) {
+                mkdir($streamDir);     
+            }
+
+            $storagePath = public_path("storage/record/$streamKey/$fileName");
+
+            $returnData = $this->downloadRecording($videoUrl, $storagePath);
             if (file_exists($storagePath)) {
 
                 if (!App::environment('local')) {
                     chmod($storagePath, 0777);
                 }
 
-                // Create RTMP directoty
-                $streamDir = public_path('storage/record/'.$streamKey);
-                if (!is_dir($streamDir)) {
-                    mkdir($streamDir);     
-                }
-
-                $destinationPath = $streamDir . '/' . $newFileName; // Record folder path
+                // Record folder path
+                $destinationPath = $streamDir . '/' . $newFileName;
                 
                 // START ffmpeg convert flv to mp4 
                 $exitStatus = 0;
+                /*
                 if (!App::environment('local')) {
                     $command = 'ffmpeg';
                 } else {
@@ -270,13 +272,16 @@ class ApiController extends Controller
                 if (!file_exists($destinationPath)) {
                     exec($ffmpegCommand, $output, $exitStatus);
                 }
+                */
                 // END ffmpeg convert flv to mp4
 
                 if ($exitStatus == 0) {
 
+                    /*
                     if (!App::environment('local')) {
                         chmod($destinationPath, 0777);
                     }
+                    */
 
                     // if ($_SERVER['SERVER_ADDR'] != '127.0.0.1' && $_SERVER['SERVER_NAME'] != 'localhost') {
                     if (!App::environment('local')) {
@@ -288,18 +293,22 @@ class ApiController extends Controller
                                 Storage::disk('s3')->makeDirectory($folderPath);
                             }
                 
-                            $s3FolderPath = $folderPath.'/'.$newFileName; // S3 folder path
+                            // S3 folder path
+                            // $s3FolderPath = $folderPath.'/'.$newFileName;
+                            $s3FolderPath = $folderPath.'/'.$fileName;
                 
-                            Storage::disk('s3')->put($s3FolderPath, file_get_contents($destinationPath));
+                            // Storage::disk('s3')->put($s3FolderPath, file_get_contents($destinationPath));
+                            Storage::disk('s3')->put($s3FolderPath, file_get_contents($storagePath));
                             $s3FileUrl = Storage::disk('s3')->url($s3FolderPath);
 
                             $updateData = [
-                                'recording_url' => "storage/record/$streamKey/$newFileName",
+                                // 'recording_url' => "storage/record/$streamKey/$newFileName",
+                                'recording_url' => "storage/record/$streamKey/$fileName",
                                 'status' => 1,
                             ];
                             RtmpRecording::where('recording_path', $streamPath)->update($updateData);
                             unlink($storagePath);
-                            unlink($destinationPath);
+                            // unlink($destinationPath);
                             $this->deleteBackendFile($streamPath);
                             return response()->json(['status' => true, 'message' => "Process Completed (S3)."], 200);
                         }
@@ -320,7 +329,8 @@ class ApiController extends Controller
                     } 
                     else {
                         $updateData = [
-                            'recording_url' => "storage/record/$streamKey/$newFileName",
+                            // 'recording_url' => "storage/record/$streamKey/$newFileName",
+                            'recording_url' => "storage/record/$streamKey/$fileName",
                             'status' => 1,
                         ];
                         RtmpRecording::where('recording_path', $streamPath)->update($updateData);
@@ -357,7 +367,7 @@ class ApiController extends Controller
         }
     }
 
-    protected function downloadTempRecord($url, $destinationPath)
+    protected function downloadRecording($url, $destinationPath)
     {
         $ch = curl_init($url);
         $fp = fopen($destinationPath, 'wb');
@@ -378,7 +388,7 @@ class ApiController extends Controller
             $logData = [
                 'message' => "cURL Error: $error_msg",
             ];
-            $this->logs($logData, 'downloadTempRecord');
+            $this->logs($logData, 'downloadRecording');
         } else {
             // echo "File downloaded successfully.";
         }

@@ -1,4 +1,4 @@
-@extends("backend.layouts.app")
+@extends("layouts.app")
 
 @section("css")
 @endsection
@@ -36,7 +36,7 @@
         record();
     });
 
-    function record_stream() {
+    function record() {
         var fileUrl = $("#recorded_url").val();
         var fileExtension = fileUrl.split('.').pop();
         var videoElement = document.getElementById('video');
