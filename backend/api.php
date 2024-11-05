@@ -6,10 +6,19 @@ file_put_contents($logFile, $logMessage, FILE_APPEND);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    if (!empty($_REQUEST['path'])) {
+    if (!empty($_REQUEST['path']) && !empty($_REQUEST['name'])) {
 
         $path = $_REQUEST['path'];
         if (unlink("./".$path)) {
+
+            $prefix = $_REQUEST['name'];
+            $files = glob('./data/' . $prefix . '*.*');
+
+            foreach ($files as $file) {
+                if (is_file($file)) {
+                    unlink($file);
+                }
+            }
 
             echo json_encode([
                 'status' => true,

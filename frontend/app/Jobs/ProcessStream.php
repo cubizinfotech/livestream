@@ -121,7 +121,7 @@ class ProcessStream implements ShouldQueue
                             RtmpRecording::where('recording_path', $streamPath)->update($updateData);
                             unlink($storagePath);
                             // unlink($destinationPath);
-                            $this->deleteBackendFile($streamPath);
+                            $this->deleteBackendFile($streamPath, $streamKey);
                             return response()->json(['status' => true, 'message' => "Process Completed (S3)."], 200);
                         }
                         catch (Aws\S3\Exception\S3Exception $e) {
@@ -147,7 +147,7 @@ class ProcessStream implements ShouldQueue
                         ];
                         RtmpRecording::where('recording_path', $streamPath)->update($updateData);
                         unlink($storagePath);
-                        $this->deleteBackendFile($streamPath);
+                        $this->deleteBackendFile($streamPath, $streamKey);
                         return response()->json(['status' => true, 'message' => "Process Completed (local)."], 200);
                     }
                 } else {
@@ -212,11 +212,12 @@ class ProcessStream implements ShouldQueue
         return true;
     }
 
-    protected function deleteBackendFile($path)
+    protected function deleteBackendFile($path, $name)
     {
         $url = env('BACKEND_SERVER_URL').'api.php';
         $data = [
             'path' => $path,
+            'name' => $name,
         ];
 
         // Initialize cURL session

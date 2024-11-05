@@ -223,6 +223,7 @@
             });
         }
 
+        /*
         function live_stream() {
             var live_url = $("#live_stream_url").val();
             var live_id = $("#live_stream_id").val();
@@ -257,6 +258,59 @@
                 $(".blinking-text").html(html);
                 console.log("No one live stream.");
             }
+        }
+        */
+        function live_stream() {
+            var live_url = $("#live_stream_url").val();
+            var live_id = $("#live_stream_id").val();
+            var live_key = $("#live_stream_key").val();
+
+            function attemptLoad() {
+                if (live_url) {
+                    console.log("Stream URL: ", live_url);
+                    var video = document.getElementById("video");
+                    var videoSrc = live_url;
+
+                    if (Hls.isSupported()) {
+                        var hls = new Hls();
+                        
+                        hls.on(Hls.Events.ERROR, function (event, data) {
+                            // console.log("data.response: ", data.response);
+                            // console.log("data.response.code: ", data.response.code);
+                            if (data.response && data.response.code == 0) {
+                                console.error("404 error - Retrying in 3 seconds...");
+                                hls.destroy();
+                                setTimeout(attemptLoad, 3000);
+                                return;
+                            }
+                        });
+
+                        hls.loadSource(videoSrc);
+                        hls.attachMedia(video);
+                    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+                        video.src = videoSrc;
+                    }
+
+                    $('#video').trigger('click');
+                    console.log("LIVE");
+
+                    var html = "";
+                    html += '<b class="text-success"> LIVE </b>';
+                    html += '<img width="40%" src="{{ asset('assets') }}/img/live-stream.svg" alt="">';
+
+                    $(".blinking-text").html(html);
+                    add_remove_class(live_id);
+                } else {
+                    var html = "";
+                    html += '<b class="text-danger"> OFFLINE </b>';
+                    html += '<img width="30%" src="{{ asset('assets') }}/img/offline.svg" alt="">';
+
+                    $(".blinking-text").html(html);
+                    console.log("No one live stream.");
+                }
+            }
+
+            attemptLoad();
         }
 
         function record_stream() {

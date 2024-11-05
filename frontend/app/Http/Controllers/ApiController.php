@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User;
 use App\Models\Rtmp;
 use App\Models\RtmpLive;
 use App\Models\RtmpComplete;
@@ -28,7 +27,7 @@ class ApiController extends Controller
         try {
             $getRtmp = Rtmp::with('rtmp_live')->where('stream_key', $request->name)->first();
 
-            if(isset($getRtmp->id) && isset($getRtmp->rtmp_live->id) && $getRtmp->rtmp_live->status == 0) {
+            if(isset($getRtmp->id) && isset($getRtmp->rtmp_live->id)) {
                 return response()->json(['status' => false, 'message' => "Blocked the stream!"], 404);
             }
             else if(isset($getRtmp->id)) {
@@ -309,7 +308,7 @@ class ApiController extends Controller
                             RtmpRecording::where('recording_path', $streamPath)->update($updateData);
                             unlink($storagePath);
                             // unlink($destinationPath);
-                            $this->deleteBackendFile($streamPath);
+                            $this->deleteBackendFile($streamPath, $streamKey);
                             return response()->json(['status' => true, 'message' => "Process Completed (S3)."], 200);
                         }
                         catch (Aws\S3\Exception\S3Exception $e) {
@@ -335,7 +334,7 @@ class ApiController extends Controller
                         ];
                         RtmpRecording::where('recording_path', $streamPath)->update($updateData);
                         unlink($storagePath);
-                        $this->deleteBackendFile($streamPath);
+                        $this->deleteBackendFile($streamPath, $streamKey);
                         return response()->json(['status' => true, 'message' => "Process Completed (local)."], 200);
                     }
                 } else {
@@ -400,11 +399,12 @@ class ApiController extends Controller
         return true;
     }
 
-    protected function deleteBackendFile($path)
+    protected function deleteBackendFile($path, $name)
     {
         $url = env('BACKEND_SERVER_URL').'api.php';
         $data = [
             'path' => $path,
+            'name' => $name,
         ];
 
         // Initialize cURL session
