@@ -6,9 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Rtmp;
 use App\Models\RtmpLive;
-use App\Models\RtmpComplete;
 use App\Models\RtmpRecording;
-use App\Models\RtmpBlocked;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -188,9 +186,7 @@ class RtpmController extends Controller
 
         Rtmp::where('id', $id)->delete();
         RtmpLive::where('rtmp_id', $id)->delete();
-        RtmpComplete::where('rtmp_id', $id)->delete();
         RtmpRecording::where('rtmp_id', $id)->delete();
-        RtmpBlocked::where('rtmp_id', $id)->delete();
 
         return response()->json([
             'status' => true,

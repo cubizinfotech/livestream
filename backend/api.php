@@ -6,11 +6,12 @@ file_put_contents($logFile, $logMessage, FILE_APPEND);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    if (!empty($_REQUEST['path']) && !empty($_REQUEST['name'])) {
+    if (!empty($_REQUEST['path']) || !empty($_REQUEST['name'])) {
 
         $path = $_REQUEST['path'];
         if (unlink("./".$path)) {
 
+            /*
             $prefix = $_REQUEST['name'];
             $files = glob('./data/' . $prefix . '*.*');
 
@@ -19,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     unlink($file);
                 }
             }
+            */
 
             echo json_encode([
                 'status' => true,
@@ -41,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'status' => false,
             'message' => 'Required fiels missing (like path).',
         ]);
-        header('HTTP/1.1 401 Unauthorized');
+        header('HTTP/1.1 404 Not Found');
         exit;
     }
 }

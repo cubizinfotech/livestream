@@ -7,7 +7,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Models\Rtmp;
 use App\Models\RtmpRecording;
 use App\Models\RtmpLogs;
 use Carbon\Carbon;
@@ -128,14 +127,14 @@ class ProcessStream implements ShouldQueue
                             $logData = [
                                 'message' => $e->getMessage(),
                             ];
-                            $this->logs($logData, 'S3uploadError1');
+                            $this->logs('S3uploadError1', $data, $logData);
                             return response()->json(['status' => false, 'message' => "S3 file upload error 1!"], 404);
                         } 
                         catch (\Throwable $th) {
                             $logData = [
                                 'message' => $th->getMessage(),
                             ];
-                            $this->logs($logData, 'S3uploadError2');
+                            $this->logs('S3uploadError2', $data, $logData);
                             return response()->json(['status' => false, 'message' => "S3 file upload error 2!"], 404);
                         }
                     } 
@@ -152,21 +151,20 @@ class ProcessStream implements ShouldQueue
                     }
                 } else {
                     $logData = [
-                        'type' => 'ffmpeg command',
                         'command' => $ffmpegCommand,
                         'status' => $exitStatus,
                         'inputFile' => $storagePath,
                         'outputFile' => $destinationPath,
                     ];
-                    $this->logs($logData, 'ffmpeg');
+                    $this->logs('ffmpegCommand', $data, $logData);
                     return response()->json(['status' => false, 'message' => "ffmpeg command not working!"], 404);
                 }
             } 
             else {
                 $logData = [
-                    'message' => 'Temporary downloading not working!',
+                    'message' => 'Downloading recording not working!',
                 ];
-                $this->logs($logData, 'tempDownload');
+                $this->logs('downloadRecording', $data, $logData);
                 return response()->json(['status' => false, 'message' => "Temporary downloading not working!"], 404);
             }
         }
@@ -174,7 +172,7 @@ class ProcessStream implements ShouldQueue
             $logData = [
                 'message' => 'Required field missing (like name, path)',
             ];
-            $this->logs($logData, 'requiredField');
+            $this->logs('requiredFieldMissing', $data, $logData);
             return response()->json(['status' => false, 'message' => "Something went wrong!"], 404);
         }
     }
@@ -200,7 +198,11 @@ class ProcessStream implements ShouldQueue
             $logData = [
                 'message' => "cURL Error: $error_msg",
             ];
-            $this->logs($logData, 'downloadRecording');
+            $data = [
+                'url' => $url,
+                'path' => $destinationPath,
+            ];
+            $this->logs('cURL-downloadRecording', $data, $logData);
         } else {
             // echo "File downloaded successfully.";
         }
@@ -238,7 +240,7 @@ class ProcessStream implements ShouldQueue
             $logData = [
                 'message' => "cURL Error: $error_msg",
             ];
-            $this->logs($logData, 'deleteBackendFile');
+            $this->logs('cURL-deleteBackendFile', $data, $logData);
         } else {
             // echo "Response from API: $response";
         }
@@ -249,18 +251,14 @@ class ProcessStream implements ShouldQueue
         return true;
     }
 
-    protected function logs($req, $type) 
+    protected function logs($type, $req, $res) 
     {
         $insertRtmpLogData = [
-            'log_datetime' => date("Y-m-d H:i:s"),
             'type' => $type,
             'payload' => json_encode($req),
+            'response' => json_encode($res),
         ];
         RtmpLogs::create($insertRtmpLogData);
-
-        $logFile = public_path('logs/stream.log');
-        $logMessage = '[' . date('Y-m-d H:i:s') . '] ' . $type . ' ::: ' . json_encode($req) . "\n\n";
-        file_put_contents($logFile, $logMessage, FILE_APPEND);
         return true;
     }
 }

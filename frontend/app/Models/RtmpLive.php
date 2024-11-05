@@ -14,9 +14,6 @@ class RtmpLive extends Model
 
     protected $fillable = [
         'rtmp_id',
-        'ip_address',
-        'timezone',
-        'streaming_datetime',
         'status',
     ];
 

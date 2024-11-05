@@ -12,9 +12,9 @@ class RtmpLogs extends Model
     protected $table = "rtmp_logs";
 
     protected $fillable = [
-        'log_datetime',
         'type',
         'payload',
+        'response',
     ];
 
     protected $timestamp = false;

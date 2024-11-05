@@ -15,9 +15,9 @@ class CreateRtmpLogsTable extends Migration
     {
         Schema::create('rtmp_logs', function (Blueprint $table) {
             $table->id();
-            $table->dateTime('log_datetime');
             $table->string('type');
             $table->longText('payload');
+            $table->longText('response');
             $table->timestamps();
         });
     }

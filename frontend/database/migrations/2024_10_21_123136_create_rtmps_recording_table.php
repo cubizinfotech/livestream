@@ -17,9 +17,8 @@ class CreateRtmpsRecordingTable extends Migration
             $table->id();
             $table->unsignedBigInteger('rtmp_id');
             $table->text('recording_url')->nullable();
-            $table->dateTime('recording_datetime');
             $table->text('recording_path');
-            $table->tinyInteger('status')->dafault(0)->comment('1->Active, 0->Inactive');
+            $table->tinyInteger('status')->default(0)->comment('1->Active, 0->Inactive');
             $table->timestamps();
         });
     }

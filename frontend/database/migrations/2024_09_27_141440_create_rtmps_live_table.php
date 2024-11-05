@@ -16,8 +16,7 @@ class CreateRtmpsLiveTable extends Migration
         Schema::create('rtmp_lives', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('rtmp_id');
-            $table->dateTime('streaming_datetime');
-            $table->tinyInteger('status')->dafault(1)->comment('1->Active, 0->Inactive');
+            $table->tinyInteger('status')->default(1)->comment('1->Active, 0->Inactive');
             $table->timestamps();
         });
     }
