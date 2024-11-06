@@ -1,10 +1,19 @@
 <?php
 
-$logFile = 'api.log';
-$logMessage = '[' . date('Y-m-d H:i:s') . '] ' . $_SERVER['REQUEST_METHOD'] . ' ::: ' . json_encode($_REQUEST) . " \n \n ";
-file_put_contents($logFile, $logMessage, FILE_APPEND);
+    header("Content-Type: application/json");
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $logFile = './log/api.log';
+    $logMessage = '[' . date('Y-m-d H:i:s') . '] ' . $_SERVER['REQUEST_METHOD'] . ' ::: ' . json_encode($_REQUEST) . " \n\n";
+    file_put_contents($logFile, $logMessage, FILE_APPEND);
+
+    if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+        echo json_encode([
+            'status' => false,
+            'message' => '405 Method Not Allowed',
+        ]);
+        http_response_code(405);
+        exit;
+    }
 
     if (!empty($_REQUEST['path']) || !empty($_REQUEST['name'])) {
 
@@ -46,14 +55,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('HTTP/1.1 404 Not Found');
         exit;
     }
-}
-else {
-    echo json_encode([
-        'status' => false,
-        'message' => '405 Method Not Allowed',
-    ]);
-    http_response_code(405);
-    exit;
-}
 
 ?>

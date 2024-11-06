@@ -18,6 +18,9 @@ services:
       - STREAM_LOG=${STREAM_LOG}
     volumes:
       - ./data:/tmp/hls
+      - ./data/live:/tmp/hls/live
+      - ./data/live_test:/tmp/hls/live_test
+      - ./data/live_stream:/tmp/hls/live_stream
       - ./record:/record
       - ./timeout.sh:/timeout.sh
     # entrypoint: /bin/bash -c "/timeout.sh & nginx -g 'daemon off;'"

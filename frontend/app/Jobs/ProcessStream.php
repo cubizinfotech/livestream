@@ -179,76 +179,35 @@ class ProcessStream implements ShouldQueue
 
     protected function downloadRecording($url, $destinationPath)
     {
-        $ch = curl_init($url);
-        $fp = fopen($destinationPath, 'wb');
+        $data = [
+            'url' => $url,
+            'path' => $destinationPath,
+        ];
 
-        // Set Curl options for large file transfer
-        curl_setopt($ch, CURLOPT_FILE, $fp);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 0); // Set timeout to 0 for no timeout
-        curl_setopt($ch, CURLOPT_BUFFERSIZE, 8192); // Set buffer size to 8KB
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Disable SSL verification
-
-        // Execute the request
-        curl_exec($ch);
-
-        // Check for errors
-        if (curl_errno($ch)) {
-            $error_msg = curl_error($ch);
-            $logData = [
-                'message' => "cURL Error: $error_msg",
-            ];
-            $data = [
-                'url' => $url,
-                'path' => $destinationPath,
-            ];
-            $this->logs('cURL-downloadRecording', $data, $logData);
+        $res = callFileAPI($url, $destinationPath);
+        if ($res['status'] == false) {
+            $this->logs('cURL-downloadRecording', $data, $res);
+            throw new Exception("Error Processing Request: " . json_encode($res));
         } else {
-            // echo "File downloaded successfully.";
+            return true;
         }
-
-        // Close resources
-        curl_close($ch);
-        fclose($fp);
-
-        return true;
     }
 
     protected function deleteBackendFile($path, $name)
     {
-        $url = env('BACKEND_SERVER_URL').'api.php';
+        $url = env('BACKEND_SERVER_URL').'api_record.php';
         $data = [
             'path' => $path,
             'name' => $name,
         ];
 
-        // Initialize cURL session
-        $ch = curl_init($url);
-
-        // Configure cURL options for a POST request
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data)); // Send data as URL-encoded form
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return the response instead of outputting it
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Disable SSL verification (use with caution)
-
-        // Execute the request
-        $response = curl_exec($ch);
-
-        // Check for errors
-        if (curl_errno($ch)) {
-            $error_msg = curl_error($ch);
-            $logData = [
-                'message' => "cURL Error: $error_msg",
-            ];
-            $this->logs('cURL-deleteBackendFile', $data, $logData);
+        $res = callPostAPI($url, $data);
+        if ($res['status'] == false) {
+            $this->logs('cURL-deleteBackendFile', $data, $res);
+            throw new Exception("Error Processing Request: " . json_encode($res));
         } else {
-            // echo "Response from API: $response";
+            return true;
         }
-
-        // Close the cURL session
-        curl_close($ch);
-
-        return true;
     }
 
     protected function logs($type, $req, $res) 

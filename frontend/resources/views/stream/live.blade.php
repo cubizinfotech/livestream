@@ -40,6 +40,18 @@
                 var videoSrc = url;
                 if (Hls.isSupported()) {
                     var hls = new Hls();
+
+                    hls.on(Hls.Events.ERROR, function (event, data) {
+                        // console.log("data.response: ", data.response);
+                        // console.log("data.response.code: ", data.response.code);
+                        if (data.response && data.response.code == 0) {
+                            console.error("404 error - Retrying in 3 seconds...");
+                            hls.destroy();
+                            setTimeout(live(), 3000);
+                            return;
+                        }
+                    });
+
                     hls.loadSource(videoSrc);
                     hls.attachMedia(video);
                 } 

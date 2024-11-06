@@ -7,7 +7,7 @@ $streamKey = $_REQUEST['name'];
 $streamCall = $_REQUEST['call'];
 
 $logFile = 'stream.log';
-$logMessage = '[' . date('Y-m-d H:i:s') . '] streamBlocked ::: ' . json_encode($_REQUEST) . " \n \n ";
+$logMessage = '[' . date('Y-m-d H:i:s') . '] streamBlocked ::: ' . json_encode($_REQUEST) . " \n\n";
 file_put_contents($logFile, $logMessage, FILE_APPEND);
 
 if ($streamKey == "stream") {

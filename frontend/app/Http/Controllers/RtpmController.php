@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\App;
+use App\Jobs\CreateRTMP;
 
 class RtpmController extends Controller
 {
@@ -115,11 +116,11 @@ class RtpmController extends Controller
         $exp_url = explode("/", $url);
         $host = parse_url($url, PHP_URL_HOST);
 
-        $rtmp_url = "rtmp://".$host.":".env('RTMP_PORT')."/live";
         $stream_key = Str::random(13);
+        $rtmp_url = "rtmp://".$host.":".env('RTMP_PORT')."/live_$stream_key";
         $live_url = $exp_url[0]."//".$host.":".env('RTMP_HOST_PORT')."/hls/".$stream_key.".m3u8";
 
-        $insert_rtmp_data = [
+        $rtmpDdata = [
             'created_by' => Auth::user()->id,
             'name' => $request->name,
             'rtmp_url' => $rtmp_url,
@@ -127,9 +128,12 @@ class RtpmController extends Controller
             'live_url' => $live_url,
             'status' => 1
         ];
-        $insert = Rtmp::create($insert_rtmp_data);
+        $insert = Rtmp::create($rtmpDdata);
 
         if (isset($insert->id)) {
+
+            // CreateRTMP::dispatch($rtmpDdata)->delay(now()->addMinutes(2));
+            CreateRTMP::dispatch($rtmpDdata);
             return response()->json([
                 'status' => true,
                 'message' => 'Stream created successfully.',
