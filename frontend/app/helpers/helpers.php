@@ -49,7 +49,7 @@ if (!function_exists('callFileAPI')) {
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Disable SSL verification
 
         // Execute the request
-        curl_exec($ch);
+        $response = curl_exec($ch);
 
         // Check for errors
         if (curl_errno($ch)) {

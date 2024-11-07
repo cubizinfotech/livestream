@@ -46,7 +46,7 @@ class CreateRTMP implements ShouldQueue
 
     protected function createRtmp($url, $data)
     {
-        $res = callPostAPI($url, $data);
+        $res = $this->callPostAPI($url, $data);
         if ($res['status'] == false) {
             $this->logs('cURL-createRtmp', $data, $res);
             throw new Exception("Error Processing Request: " . json_encode($res));
@@ -64,5 +64,38 @@ class CreateRTMP implements ShouldQueue
         ];
         RtmpLogs::create($insertRtmpLogData);
         return true;
+    }
+
+    public function callPostAPI($url, $data)
+    {
+        // Initialize cURL session
+        $ch = curl_init($url);
+
+        // Configure cURL options for a POST request
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data)); // Send data as URL-encoded form
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return the response instead of outputting it
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Disable SSL verification (use with caution)
+
+        // Execute the request
+        $response = curl_exec($ch);
+
+        // Check for errors
+        if (curl_errno($ch)) {
+            $res = [
+                'status' => false,
+                'message' => "cURL Error: " . curl_error($ch),
+            ];
+        } else {
+            $res = [
+                'status' => true,
+                'message' => $response,
+            ];
+        }
+
+        // Close the cURL session
+        curl_close($ch);
+
+        return $res;
     }
 }

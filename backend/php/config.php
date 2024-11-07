@@ -5,6 +5,7 @@
     $password               = getenv('DB_PASSWORD');
     $database               = getenv('DB_DATABASE');
 
+    $appEnviroment          = getenv('APP_ENV');
     $containerName          = getenv('CONTAINER_NAME');
     $rtmpPort               = getenv('RTMP_PORT');
     $httpPort               = getenv('HTTP_PORT');

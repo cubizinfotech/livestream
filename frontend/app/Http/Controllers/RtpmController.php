@@ -172,13 +172,17 @@ class RtpmController extends Controller
         } 
         else {
             try {
-                rmdir($folderPath);
-                $folderPath = "storage/record/$folderName";
-                $files = Storage::disk('s3')->files($folderPath);
-                foreach ($files as $file) {
-                    Storage::disk('s3')->delete($file);
+                if (is_dir($folderPath)) {
+                    rmdir($folderPath);
                 }
-                Storage::disk('s3')->deleteDirectory($folderPath);
+                $folderPath = "storage/record/$folderName";
+                if(Storage::disk('s3')->exists($folderPath)) {
+                    $files = Storage::disk('s3')->files($folderPath);
+                    foreach ($files as $file) {
+                        Storage::disk('s3')->delete($file);
+                    }
+                    Storage::disk('s3')->deleteDirectory($folderPath);
+                }
             }
             catch (Aws\S3\Exception\S3Exception $e) {
                 return response()->json(['status' => false, 'message' => "S3 file upload error 1!", 'message2' => $e->getMessage()], 404);

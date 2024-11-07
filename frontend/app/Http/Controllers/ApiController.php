@@ -25,7 +25,11 @@ class ApiController extends Controller
             $getRtmp = Rtmp::with('rtmp_live')->where('stream_key', $request->name)->first();
 
             if(isset($getRtmp->id) && isset($getRtmp->rtmp_live->id)) {
-                return response()->json(['status' => false, 'message' => "Blocked the stream!"], 404);
+                if ($getRtmp->rtmp_live->status == 1) {
+                    return response()->json(['status' => false, 'message' => "Stream disconnected (connected again)."], 200);
+                } else {
+                    return response()->json(['status' => false, 'message' => "Blocked the stream!"], 404);
+                }
             }
             else if(isset($getRtmp->id)) {
                 $insertRtmpLiveData = [
