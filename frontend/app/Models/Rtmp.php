@@ -20,6 +20,10 @@ class Rtmp extends Model
         'rtmp_url',
         'stream_key',
         'live_url',
+        'server_name',
+        'container_name',
+        'rtmp_port',
+        'http_port',
         'status',
     ];
 

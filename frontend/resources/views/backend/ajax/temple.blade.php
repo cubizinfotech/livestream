@@ -7,7 +7,7 @@
 @if($type == "showTempleRecords")
     <ul class="church-list">
         @foreach ($records as $key => $value)
-            <li class="church-list-item delete_record_{{ $value->id }} {{ (isset($value->rtmp_live->id) && $value->rtmp_live->status == 0) ? 'border border-danger' : '' }}">
+            <li class="church-list-item delete_record_{{ $value->id }} {{ ($value->status == 2) ? 'border border-warning' : '' }} {{ (isset($value->rtmp_live->id) && $value->rtmp_live->status == 0) ? 'border border-danger' : '' }}" <?php if($value->status == 2) { echo 'data-toggle="tooltip" title="RTMP server creation pending"'; } ?>>
                 <div class="cl-content">
                     <h4 class="cursor-pointer"><a href="{{ route('temple.videos', $value->stream_key) }}" target="">{{ $value->name }}</a></h4>
                     <p><b>RTMP URL:</b> {{ $value->rtmp_url }}</p>
@@ -119,15 +119,16 @@
 @endif
 
 @if($type == "getLiveStreamPageLoad")
-    @if(!empty($records))
-        <input type="hidden" name="live_stream_url" id="live_stream_url" value="{{ $records->rtmp->live_url }}">
-        <input type="hidden" name="live_stream_id" id="live_stream_id" value="{{ $records->rtmp->id }}">
-        <input type="hidden" name="live_stream_key" id="live_stream_key" value="{{ $records->rtmp->stream_key }}">
+    @if(!empty($records) && !empty($records->rtmp_live->id) && $records->rtmp_live->status == 1)
+        <input type="hidden" name="live_stream_url" id="live_stream_url" value="{{ $records->live_url }}">
+        <input type="hidden" name="live_stream_id" id="live_stream_id" value="{{ $records->id }}">
+        <input type="hidden" name="live_stream_key" id="live_stream_key" value="{{ $records->stream_key }}">
     @else
         <input type="hidden" name="live_stream_url" id="live_stream_url" value="">
         <input type="hidden" name="live_stream_id" id="live_stream_id" value="">
         <input type="hidden" name="live_stream_key" id="live_stream_key" value="">
     @endif
+    <input type="hidden" name="live_rtmp_status" id="live_rtmp_status" value="{{ isset($records->status) ? $records->status : '' }}">
 @endif
 
 @if($type == "playVideosRecords")

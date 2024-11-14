@@ -108,9 +108,9 @@
 
 @section("scripts")
     <script>
-        $(document).ready(function() {
+        $(document).ready(async function() {
 
-            record_stream();
+            await record_stream();
         });
 
         $(".video_dropdown_list").on("change", function() {

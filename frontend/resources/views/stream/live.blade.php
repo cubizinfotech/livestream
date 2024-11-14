@@ -28,8 +28,8 @@
 
 @section("scripts")
     <script>
-        $(document).ready(function() {
-            live();
+        $(document).ready(async function() {
+            await live();
         });
 
         function live() {

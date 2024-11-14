@@ -32,8 +32,8 @@
 
 @section("scripts")
 <script>
-    $(document).ready(function() {
-        record();
+    $(document).ready(async function() {
+        await record();
     });
 
     function record() {

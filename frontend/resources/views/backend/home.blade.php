@@ -78,11 +78,11 @@
 
 @section("scripts")
     <script>
-        $(document).ready(function() {
+        $(document).ready(async function() {
 
-            showAllTempleNameRecords();
-            showTempleRecords();
-            getLiveStreamPageLoad();
+            await showAllTempleNameRecords();
+            await showTempleRecords();
+            await getLiveStreamPageLoad();
 
             $('#addchurch').on('hidden.bs.modal', function() {
                 $(this).find('form').trigger('reset');
@@ -101,7 +101,7 @@
                 cache: false,
                 contentType: false,
                 processData: false,
-                success: function(response) {
+                success: async function(response) {
                     console.log(response);
                     if (response.status == false) {
                         $(".error_message").html(response.message);
@@ -110,8 +110,8 @@
                     if (response.status == true) {
                         $('#addchurch').modal('hide');
                         toster("Success", response.message, "success");
-                        showTempleRecords();
-                        showAllTempleNameRecords();
+                        await showTempleRecords();
+                        await showAllTempleNameRecords();
                     }
                 },
                 error: function(error) {
@@ -127,11 +127,10 @@
             // add_remove_class(templeID);
         });
 
-        function reload_stream(id) {
+        async function reload_stream(id) {
 
             var templeID = id;
             showTempleRecords(templeID, 'reload');
-            add_remove_class(templeID);
 
             // $(".show_class").removeClass("d-none");
             // $(".hide_class").addClass("d-none");

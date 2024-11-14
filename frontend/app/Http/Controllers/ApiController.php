@@ -25,11 +25,7 @@ class ApiController extends Controller
             $getRtmp = Rtmp::with('rtmp_live')->where('stream_key', $request->name)->first();
 
             if(isset($getRtmp->id) && isset($getRtmp->rtmp_live->id)) {
-                if ($getRtmp->rtmp_live->status == 1) {
-                    return response()->json(['status' => false, 'message' => "Stream disconnected (connected again)."], 200);
-                } else {
-                    return response()->json(['status' => false, 'message' => "Blocked the stream!"], 404);
-                }
+                return response()->json(['status' => false, 'message' => "Blocked the stream!"], 404);
             }
             else if(isset($getRtmp->id)) {
                 $insertRtmpLiveData = [
@@ -41,7 +37,7 @@ class ApiController extends Controller
             else {
                 return response()->json(['status' => false, 'message' => "Something went wrong!"], 404);  
             }
-        } catch (Exception $ex) {
+        } catch (\Exception $ex) {
             return response()->json(['status' => false, 'message' => $ex->Message()], 404);
         }
     }
@@ -60,7 +56,7 @@ class ApiController extends Controller
             else {
                 return response()->json(['status' => false, 'message' => "Something went wrong!"], 404);  
             }
-        } catch (Exception $ex) {
+        } catch (\Exception $ex) {
             return response()->json(['status' => false, 'message' => $ex->Message()], 404);
         }
     }
@@ -85,7 +81,7 @@ class ApiController extends Controller
             else {
                 return response()->json(['status' => false, 'message' => "Something went wrong!"], 404);  
             }
-        } catch (Exception $ex) {
+        } catch (\Exception $ex) {
             return response()->json(['status' => false, 'message' => $ex->Message()], 404);
         }
     }
@@ -104,7 +100,7 @@ class ApiController extends Controller
             else {
                 return response()->json(['status' => false, 'message' => "Something went wrong!"], 404);  
             }
-        } catch (Exception $ex) {
+        } catch (\Exception $ex) {
             return response()->json(['status' => false, 'message' => $ex->Message()], 404);
         }
     }
@@ -117,7 +113,7 @@ class ApiController extends Controller
                 abort(404);
             }
             return view("stream.live", compact('live'));
-        } catch (Exception $ex) {
+        } catch (\Exception $ex) {
             return response()->json(['status' => false, 'message' => $ex->Message()], 404);
         }
     }
@@ -130,7 +126,7 @@ class ApiController extends Controller
                 abort(404);
             }
             return view("stream.record", compact('record'));
-        } catch (Exception $ex) {
+        } catch (\Exception $ex) {
             return response()->json(['status' => false, 'message' => $ex->Message()], 404);
         }
     }
@@ -153,7 +149,7 @@ class ApiController extends Controller
         // ------------------------Recording---------------------------------
         */
 
-        
+        /*
         // ------------------------S3 bucket---------------------------------
         $folderPath = "storage/record/IkSjJKBTpQ1UW";
         if (Storage::disk('s3')->exists($folderPath)) {
@@ -187,7 +183,19 @@ class ApiController extends Controller
         print_r($files);
         die;
         // ------------------------S3 bucket---------------------------------
+        */
         
+        /*
+        // ------------------------API testing------------------------------
+        $url = env('RTMP_CREATE_URL');
+        $data = [];
+        $res = $this->callAPI($url, $data);
+        $res = json_decode($res, true);
+        echo "<pre>";
+        print_r($res);
+        die;
+        // ------------------------API testing------------------------------
+        */
 
         return response()->json(['status' => true, 'message' => 'Nothing testing!'], 200);
     }
@@ -198,5 +206,22 @@ class ApiController extends Controller
         $logMessage = '[' . date('Y-m-d H:i:s') . '] ' . $type . ' ::: ' . json_encode($req) . "\n\n";
         file_put_contents($logFile, $logMessage, FILE_APPEND);
         return true;
+    }
+
+    protected function callAPI($url, $data, $mode = 'r')
+    {
+        $ch = curl_init($url);
+        $fp = $mode == 'wb' ? fopen($data['path'], 'wb') : null;
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_FILE, $fp);
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        if ($mode == 'wb') fclose($fp);
+
+        return $response;
     }
 }

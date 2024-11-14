@@ -38,6 +38,7 @@ Command:
 	hostname -I
 
 DockerCommand:
+		docker build -t shared-rtmp-image . >>> create image and used multiple RTMP server
 		docker login
 		docker-compose build
 		docker-compose up

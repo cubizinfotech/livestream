@@ -128,10 +128,21 @@
                     type: "getLiveStreamPageLoad",
                     templeID: templeID
                 },
-                success: function(response) {
+                success: async function(response) {
                     $(".add_live_stream").html(response);
                     // console.log(response);
-                    live_stream();
+                    setTimeout(async () => {
+                        if ($("#live_rtmp_status").val() == 1) {
+                            if ($(".delete_record_" + templeID).hasClass('border-warning')) {
+                                $(".delete_record_" + templeID).removeClass('border border-warning');
+                            }
+                            $(".delete_record_" + templeID).removeAttr('title').removeAttr('data-toggle').removeAttr('data-bs-original-title');
+                        }
+                        if ($("#live_stream_url").val()) {
+                            await add_remove_class(templeID);
+                            await live_stream();
+                        }
+                    }, 250);
                 },
                 error: function(error) {
                     console.log(error);
@@ -398,7 +409,9 @@
                     data: { id },
                     success: function(response) {
                         $(".unblocked_"+id).remove();
-                        $(".delete_record_"+id).removeClass('border border-danger');
+                        if ($(".delete_record_" + id).hasClass('border-danger')) {
+                            $(".delete_record_" + id).removeClass('border border-danger');
+                        }
                         toster("Success", "Unblock stream successfully!", "success");
                         // console.log(response);
                     },

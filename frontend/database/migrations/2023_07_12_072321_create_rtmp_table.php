@@ -20,7 +20,11 @@ class CreateRtmpTable extends Migration
             $table->string('rtmp_url');
             $table->string('stream_key');
             $table->string('live_url');
-            $table->tinyInteger('status')->default(1)->comment('1->Active, 0->Inactive');
+            $table->string('server_name')->unique();
+            $table->string('container_name')->unique();
+            $table->integer('rtmp_port')->unique();
+            $table->integer('http_port')->unique();
+            $table->tinyInteger('status')->default(1)->comment('1->Active, 0->Inactive, 2->Pending');
             $table->timestamps();
         });
     }

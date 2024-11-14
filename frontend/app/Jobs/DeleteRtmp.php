@@ -8,10 +8,13 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use App\Models\Rtmp;
+use App\Models\RtmpLive;
+use App\Models\RtmpRecording;
 use App\Models\RtmpLogs;
 use Illuminate\Support\Facades\Log;
 
-class CreateRTMP implements ShouldQueue
+class DeleteRtmp implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -28,15 +31,20 @@ class CreateRTMP implements ShouldQueue
     public function handle()
     {
         $data = $this->data;
+        $id = $data['id'];
         Log::info('Processing task with data: ', [json_encode($data)]);
-        $url = env('RTMP_CREATE_URL');
-        $res = $this->createRtmp($url, $data);
+        $url = env('RTMP_DELETE_URL');
+        $res = $this->deleteRtmp($url, $data);
         $res = json_decode($res, true);
 
         if ($res['status'] == false) {
-            $this->logs('cURL-createRtmp', $data, $res);
+            $this->logs('cURL-deleteRtmp', $data, $res);
             throw new \Exception("Error Processing Request: " . json_encode($res));
         }
+        
+        Rtmp::where('id', $id)->delete();
+        RtmpLive::where('rtmp_id', $id)->delete();
+        RtmpRecording::where('rtmp_id', $id)->delete();
         
         return true;
     }
@@ -52,7 +60,7 @@ class CreateRTMP implements ShouldQueue
         return true;
     }
 
-    public function createRtmp($url, $data)
+    public function deleteRtmp($url, $data)
     {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_POST, true);

@@ -3,19 +3,20 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User;
 use App\Models\Rtmp;
 use App\Models\RtmpLive;
 use App\Models\RtmpRecording;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Stevebauman\Location\Facades\Location;
-use Carbon\Carbon;
-use File;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\App;
 use App\Jobs\CreateRTMP;
+use App\Jobs\DeleteRtmp;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\File;
+use Illuminate\Validation\Rule;
 
 class RtpmController extends Controller
 {
@@ -30,177 +31,139 @@ class RtpmController extends Controller
         return view("backend.home");
     }
 
-    public function index(Request $request) {
-        
+    public function index(Request $request)
+    {
         $type = $request->type;
         $id = $request->templeID;
         $created_by = Auth::user()->id;
-        
-        if($request->ajax() && !empty($request->type) && $request->type == "showTempleRecords") {
+        $records = null;
 
-            if(!empty($id)) {
-                $records = Rtmp::with('rtmp_live')->where('created_by', $created_by)->where('status', 1)->where('id', $id)->get();
-                return view("backend.ajax.temple", compact('records', 'type'));
+        if ($request->ajax()) {
+            switch ($type) {
+                case "showTempleRecords":
+                    $records = !empty($id) 
+                        ? Rtmp::with('rtmp_live')->where('created_by', $created_by)->whereIn('status', [1, 2])->where('id', $id)->get()
+                        : Rtmp::with('rtmp_live')->where('created_by', $created_by)->whereIn('status', [1, 2])->orderBy('id', 'DESC')->get();
+                    break;
+                case "showVideosRecords":
+                    $records = !empty($id)
+                        ? RtmpRecording::with('rtmp')->where('status', 1)->where('rtmp_id', $id)->get()
+                        : RtmpRecording::with('rtmp')->where('status', 1)->get();
+                    break;
+                case "showAllTempleNameRecords":
+                    $records = Rtmp::where('created_by', $created_by)->where('status', 1)->orderBy('id', 'DESC')->get();
+                    break;
+                case "getLiveStreamPageLoad":
+                    $records = !empty($id)
+                        ? Rtmp::with('rtmp_live')->where('id', $id)->where('status', 1)->orderBy('id', 'DESC')->first()
+                        : Rtmp::whereHas('rtmp_live')->where('status', 1)->orderBy('id', 'DESC')->first();
+                    /*
+                    $records = !empty($id)
+                        ? Rtmp::whereHas('rtmp_live', function($query) {
+                            return $query->where('status', 1);
+                        })->where('id', $id)->where('status', 1)->orderBy('id', 'DESC')->first()
+                        : Rtmp::whereHas('rtmp_live', function($query) {
+                            return $query->where('status', 1);
+                        })->where('status', 1)->orderBy('id', 'DESC')->first();
+                    */
+                    break;
+                case "playVideosRecords":
+                    $records = !empty($id)
+                        ? RtmpRecording::with('rtmp')->where('status', 1)->where('id', $id)->first()
+                        : RtmpRecording::with('rtmp')->where('status', 1)->orderBy('id', 'DESC')->first();
+                    break;
+                default:
+                    return '<b class="text-danger">Something Went Wrong.</b>';
             }
-            else {
-                $records = Rtmp::with('rtmp_live')->where('created_by', $created_by)->where('status', 1)->orderBy('id', 'DESC')->get();
-                return view("backend.ajax.temple", compact('records', 'type'));
-            }
-        }
-
-        if($request->ajax() && !empty($request->type) && $request->type == "showVideosRecords") {
-
-            if(!empty($id)) {
-                $records = RtmpRecording::with('rtmp')->where('status', 1)->where('rtmp_id', $id)->get();
-                return view("backend.ajax.temple", compact('records', 'type'));
-            }
-            else {
-                $records = RtmpRecording::with('rtmp')->where('status', 1)->get();
-                return view("backend.ajax.temple", compact('records', 'type'));
-            }
-        }
-
-        if($request->ajax() && !empty($request->type) && $request->type == "showAllTempleNameRecords") {
-
-            $records = Rtmp::where('created_by', $created_by)->where('status', 1)->orderBy('id', 'DESC')->get();
             return view("backend.ajax.temple", compact('records', 'type'));
         }
 
-        if($request->ajax() && !empty($request->type) && $request->type == "getLiveStreamPageLoad") {
-
-            if (!empty($id)) {
-                $records = RtmpLive::with('rtmp')->where('rtmp_id', $id)->where('status', 1)->orderBy('id', 'DESC')->first();
-                return view("backend.ajax.temple", compact('records', 'type'));
-            }
-            else {
-                $records = RtmpLive::whereHas('rtmp', function($query) use ($created_by) {
-                    $query->where('created_by', $created_by);
-                })->where('status', 1)->orderBy('id', 'DESC')->first();
-                return view("backend.ajax.temple", compact('records', 'type'));
-            }
-        }
-
-        if($request->ajax() && !empty($request->type) && $request->type == "playVideosRecords") {
-
-            if (!empty($id)) {
-                $records = RtmpRecording::with('rtmp')->where('status', 1)->where('id', $id)->first();
-                return view("backend.ajax.temple", compact('records', 'type'));
-            }
-            else {
-                $records = RtmpRecording::with('rtmp')->where('status', 1)->orderBy('id', 'DESC')->first();
-                return view("backend.ajax.temple", compact('records', 'type'));
-            }
-        }
-
         return '<b class="text-danger">Something Went Wrong.</b>';
-        exit;
     }
 
-    public function store(Request $request) {
-
-        $timezone = $this->timezone($request);
-        date_default_timezone_set($timezone);
-
+    public function store(Request $request)
+    {
+        $userId = Auth::user()->id;
         $validator = Validator::make($request->all(), [
-            'name' => 'required|unique:rtmps,name|max:191',
+            'name' => ['required', 'max:191', Rule::unique('rtmps')->where(fn($query) => $query->where('created_by', $userId))],
         ]);
+
         if ($validator->fails()) {
-            return response()->json([
-                'status' => false, 
-                'message' => $validator->errors()->first(), 
-                'error' => [$validator->errors()->first()]
-            ]);          
+            return response()->json(['status' => false, 'message' => $validator->errors()->first(), 'error' => [$validator->errors()->first()]]);
         }
 
         $url = url('/');
         $exp_url = explode("/", $url);
         $host = parse_url($url, PHP_URL_HOST);
-
+        $server_name = ucwords(str_replace(' ', '', $request->name));
+        $rtmp_port = $this->generateUniquePort('rtmp_port');
+        $http_port = $this->generateUniquePort('http_port');
         $stream_key = Str::random(13);
-        $rtmp_url = "rtmp://".$host.":".env('RTMP_PORT')."/live_$stream_key";
-        $live_url = $exp_url[0]."//".$host.":".env('RTMP_HOST_PORT')."/hls/".$stream_key.".m3u8";
+        $rtmp_url = "rtmp://{$host}:{$rtmp_port}/live";
+        $live_url = "{$exp_url[0]}//{$host}:{$http_port}/hls/{$stream_key}.m3u8";
+        $count = Rtmp::count() + 1;
 
         $rtmpDdata = [
-            'created_by' => Auth::user()->id,
+            'created_by' => $userId,
             'name' => $request->name,
             'rtmp_url' => $rtmp_url,
             'stream_key' => $stream_key,
             'live_url' => $live_url,
-            'status' => 1
+            'server_name' => "S{$count}-{$server_name}",
+            'container_name' => "C{$count}-{$server_name}",
+            'rtmp_port' => $rtmp_port,
+            'http_port' => $http_port,
+            'status' => 2
         ];
-        $insert = Rtmp::create($rtmpDdata);
 
-        if (isset($insert->id)) {
+        $rtmpIinsert = Rtmp::create($rtmpDdata);
 
-            // CreateRTMP::dispatch($rtmpDdata)->delay(now()->addMinutes(2));
-            CreateRTMP::dispatch($rtmpDdata);
-            return response()->json([
-                'status' => true,
-                'message' => 'Stream created successfully.',
-                'result' => $insert
-            ]);
-        } else {
-            return response()->json([
-                'status' => false,
-                'message' => 'Something went wrong.',
-                'result' => $insert
-            ]);
+        if ($rtmpIinsert) {
+            CreateRTMP::dispatch($rtmpIinsert->toArray());
+            return response()->json(['status' => true, 'message' => 'Stream created successfully.', 'result' => $rtmpIinsert]);
         }
+
+        return response()->json(['status' => false, 'message' => 'Something went wrong.']);
     }
 
-    public function destroy(Request $request, $id) {
-
+    public function destroy(Request $request, $id)
+    {
         $getRtmp = Rtmp::where(['id' => $id, 'status' => 1])->first();
 
-        if(empty($getRtmp)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Rtmp not found!!!.',
-                'result' => $id
-            ]);
+        if (!$getRtmp) {
+            return response()->json(['status' => false, 'message' => 'Rtmp not found!!!.', 'result' => $id]);
         }
 
         $folderName = $getRtmp->stream_key;
-        $folderPath = public_path("storage/record/$folderName");
+        $folderPath = public_path("storage/record/{$folderName}");
 
-        // if ($_SERVER['SERVER_ADDR'] == '127.0.0.1' || $_SERVER['SERVER_NAME'] == 'localhost') {
         if (App::environment('local')) {
             if (is_dir($folderPath)) {
-                array_map('unlink', glob("$folderPath/*.*"));
+                array_map('unlink', glob("{$folderPath}/*.*"));
                 rmdir($folderPath);
             }
-        } 
-        else {
+        } else {
             try {
-                if (is_dir($folderPath)) {
-                    rmdir($folderPath);
-                }
-                $folderPath = "storage/record/$folderName";
-                if(Storage::disk('s3')->exists($folderPath)) {
+                if (is_dir($folderPath)) rmdir($folderPath);
+                $folderPath = "storage/record/{$folderName}";
+                if (Storage::disk('s3')->exists($folderPath)) {
                     $files = Storage::disk('s3')->files($folderPath);
                     foreach ($files as $file) {
                         Storage::disk('s3')->delete($file);
                     }
                     Storage::disk('s3')->deleteDirectory($folderPath);
                 }
-            }
-            catch (Aws\S3\Exception\S3Exception $e) {
-                return response()->json(['status' => false, 'message' => "S3 file upload error 1!", 'message2' => $e->getMessage()], 404);
-            } 
-            catch (\Throwable $th) {
-                return response()->json(['status' => false, 'message' => "S3 file upload error 2!", 'message2' => $th->getMessage()], 404);
+            } catch (\Throwable $e) {
+                return response()->json(['status' => false, 'message' => "S3 file error", 'error' => $e->getMessage()]);
             }
         }
 
-        Rtmp::where('id', $id)->delete();
+        Rtmp::where('id', $id)->update(['status' => 0]);
         RtmpLive::where('rtmp_id', $id)->delete();
         RtmpRecording::where('rtmp_id', $id)->delete();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Rtmp deleted successfully.',
-            'result' => $folderPath
-        ]);
+        DeleteRtmp::dispatch($getRtmp->toArray());
+        return response()->json(['status' => true, 'message' => 'Rtmp deleted successfully.']);
     }
 
     public function shows(Request $request, $id) {
@@ -256,7 +219,7 @@ class RtpmController extends Controller
                     Storage::disk('s3')->deleteDirectory("storage/record/$folderName");
                 }
             }
-            catch (Aws\S3\Exception\S3Exception $e) {
+            catch (\Aws\S3\Exception\S3Exception $e) {
                 return response()->json(['status' => false, 'message' => "S3 file upload error 1!", 'message2' => $e->getMessage()], 404);
             } 
             catch (\Throwable $th) {
@@ -297,15 +260,13 @@ class RtpmController extends Controller
         return response()->json([], 200);
     }
 
-    public function timezone(Request $request) {
+    public function generateUniquePort($column)
+    {
+        do {
+            $port = rand(1000, 9999);
+            $exists = DB::table('rtmps')->where($column, $port)->exists();
+        } while ($exists);
 
-        $ip = $request->ip();
-        $get_country_data = Location::get($ip);
-        if(empty($get_country_data->timezone)) {
-            $timezone = "Asia/Kolkata";
-        } else {
-            $timezone = $get_country_data->timezone;
-        }
-        return $timezone;
+        return $port;
     }
 }
