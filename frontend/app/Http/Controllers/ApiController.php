@@ -9,6 +9,7 @@ use App\Models\RtmpRecording;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\App;
 use App\Jobs\ProcessStream;
+use Aws\S3\S3Client;
 
 class ApiController extends Controller
 {
@@ -25,7 +26,11 @@ class ApiController extends Controller
             $getRtmp = Rtmp::with('rtmp_live')->where('stream_key', $request->name)->first();
 
             if(isset($getRtmp->id) && isset($getRtmp->rtmp_live->id)) {
-                return response()->json(['status' => false, 'message' => "Blocked the stream!"], 404);
+                if($getRtmp->rtmp_live->is_block == 1 || $getRtmp->rtmp_live->status == 0) {
+                    return response()->json(['status' => false, 'message' => "Blocked the stream!"], 404);
+                } else {
+                    return response()->json(['status' => true, 'message' => 'Stream disconnected.'], 200);
+                }
             }
             else if(isset($getRtmp->id)) {
                 $insertRtmpLiveData = [
@@ -94,7 +99,7 @@ class ApiController extends Controller
             $getRtmp = Rtmp::with('rtmp_live')->where('stream_key', $request->name)->first();
 
             if(isset($getRtmp->id) && isset($getRtmp->rtmp_live->id)) {
-                RtmpLive::where('id', $getRtmp->rtmp_live->id)->update(['status' => 0]);
+                RtmpLive::where('id', $getRtmp->rtmp_live->id)->update(['status' => 0, 'is_block' => 1]);
                 return response()->json(['status' => true, 'message' => 'Stream blocked successfully!'], 200);
             }
             else {
@@ -196,6 +201,25 @@ class ApiController extends Controller
         die;
         // ------------------------API testing------------------------------
         */
+
+        // ------------------------Getting S3 bucket file URl------------------------------
+        $bucketName = env('AWS_BUCKET');
+        $keyName = 'storage/record/ljkiPdesk9Als/ljkiPdesk9Als-1732866760.flv';
+        $region = env('AWS_DEFAULT_REGION');
+
+        $s3 = new S3Client([
+            'region'  => $region,
+            'version' => 'latest',
+            'credentials' => [
+                'key'    => env('AWS_ACCESS_KEY_ID'),
+                'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            ],
+        ]);
+
+        $url = $s3->getObjectUrl($bucketName, $keyName);
+        echo "File URL: " . $url . "\n";
+        exit;
+        // ------------------------Getting S3 bucket file URl------------------------------
 
         return response()->json(['status' => true, 'message' => 'Nothing testing!'], 200);
     }

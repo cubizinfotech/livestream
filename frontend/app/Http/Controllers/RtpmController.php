@@ -96,12 +96,11 @@ class RtpmController extends Controller
         $exp_url = explode("/", $url);
         $host = parse_url($url, PHP_URL_HOST);
         $server_name = ucwords(str_replace(' ', '', $request->name));
-        $rtmp_port = $this->generateUniquePort('rtmp_port');
-        $http_port = $this->generateUniquePort('http_port');
+        $rtmp_port = $this->generateUniquePort();
+        $http_port = $this->generateUniquePort();
         $stream_key = Str::random(13);
         $rtmp_url = "rtmp://{$host}:{$rtmp_port}/live";
         $live_url = "{$exp_url[0]}//{$host}:{$http_port}/hls/{$stream_key}.m3u8";
-        $count = Rtmp::count() + 1;
 
         $rtmpDdata = [
             'created_by' => $userId,
@@ -109,8 +108,8 @@ class RtpmController extends Controller
             'rtmp_url' => $rtmp_url,
             'stream_key' => $stream_key,
             'live_url' => $live_url,
-            'server_name' => "S{$count}-{$server_name}",
-            'container_name' => "C{$count}-{$server_name}",
+            'server_name' => "S{$stream_key}-{$server_name}",
+            'container_name' => "C{$stream_key}-{$server_name}",
             'rtmp_port' => $rtmp_port,
             'http_port' => $http_port,
             'status' => 2
@@ -128,7 +127,7 @@ class RtpmController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        $getRtmp = Rtmp::where(['id' => $id, 'status' => 1])->first();
+        $getRtmp = Rtmp::where(['id' => $id])->first();
 
         if (!$getRtmp) {
             return response()->json(['status' => false, 'message' => 'Rtmp not found!!!.', 'result' => $id]);
@@ -260,11 +259,11 @@ class RtpmController extends Controller
         return response()->json([], 200);
     }
 
-    public function generateUniquePort($column)
+    public function generateUniquePort()
     {
         do {
-            $port = rand(1000, 9999);
-            $exists = DB::table('rtmps')->where($column, $port)->exists();
+            $port = rand(7001, 8099);
+            $exists = DB::table('rtmps')->where('rtmp_port', $port)->orWhere('http_port', $port)->exists();
         } while ($exists);
 
         return $port;

@@ -51,8 +51,13 @@
             'php'   => './rtmp/index.php'
         ];
         $serverPath = "./rtmp_server/$stream_key";
+        $dataPath = "./rtmp_server/$stream_key/data";
+        $recordPath = "./rtmp_server/$stream_key/record";
         if (!is_dir($serverPath)) {
+            umask(0);
             mkdir($serverPath, 0777, true);
+            mkdir($dataPath, 0777, true);
+            mkdir($recordPath, 0777, true);
         }
 
         $replacements = [
@@ -117,6 +122,13 @@
     } catch (Exception $th) {
         // http_response_code(500);
         echo json_encode(['status' => false, 'message' => $th->Message()]);
+    }
+
+    if ($appEnviroment !== 'local') {
+        // Set permissions
+        chmod($serverPath, 0777);
+        chmod($dataPath, 0777);
+        chmod($recordPath, 0777);
     }
 
     mysqli_close($conn);

@@ -88,10 +88,10 @@ class ProcessStream implements ShouldQueue
     protected function downloadRecording($url, $destinationPath)
     {
         $res = $this->callFileAPI($url, $destinationPath);
-        if (!$res['status']) {
-            $this->logs('cURL-downloadRecording', ['url' => $url, 'path' => $destinationPath], $res);
-            throw new \Exception("Error Processing Request: " . json_encode($res));
-        }
+        // if (!$res['status']) {
+        //     $this->logs('cURL-downloadRecording', ['url' => $url, 'path' => $destinationPath], $res);
+        //     throw new \Exception("Error Processing Request: " . json_encode($res));
+        // }
         return true;
     }
 
