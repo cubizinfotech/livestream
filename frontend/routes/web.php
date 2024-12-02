@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RtpmController;
 use App\Http\Controllers\ApiController;
 use App\Http\Controllers\HomeController;
+use Illuminate\Support\Facades\Auth;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,6 +19,7 @@ use App\Http\Controllers\HomeController;
 */
 
 Route::get('/', function () {
+    return redirect()->route("admin.home");
     return view('home');
 });
 

@@ -95,7 +95,7 @@ class RtpmController extends Controller
         $url = url('/');
         $exp_url = explode("/", $url);
         $host = parse_url($url, PHP_URL_HOST);
-        $server_name = ucwords(str_replace(' ', '', $request->name));
+        $server_name = preg_replace('/[^A-Za-z0-9]/', '', ucwords($request->name));
         $rtmp_port = $this->generateUniquePort();
         $http_port = $this->generateUniquePort();
         $stream_key = Str::random(13);
