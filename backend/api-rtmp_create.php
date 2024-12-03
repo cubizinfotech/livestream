@@ -62,7 +62,7 @@
 
         $replacements = [
             'yml' => ['[SERVER_NAME]', '[CONTAINER_NAME]', '[RTMP_PORT]', '[HTTP_PORT]'],
-            'conf' => ['[RTMP_PORT]', '[MAX_VIEWERS]', '[HLS_PLAYLIST_LENGTH]', '[MAX_STREAMING_TIME]', '[ON_PUBLISH]', '[ON_PUBLISH_DONE]', '[ON_RECORD_DONE]', '[HTTP_PORT]', '[STREAM_LOG]'],
+            'conf' => ['[RTMP_PORT]', '[MAX_VIEWERS]', '[HLS_FRAGMENT]', '[HLS_PLAYLIST_LENGTH]', '[MAX_STREAMING_TIME]', '[ON_PUBLISH]', '[ON_PUBLISH_DONE]', '[ON_RECORD_DONE]', '[HTTP_PORT]', '[STREAM_LOG]'],
             'sh' => ['[STREAM_BLOCKED]'],
             'html' => ['[MAIN_SERVER_URL]', '[HTTP_PORT]', '[STREAM_KEY]'],
             'php' => ['[MAIN_PAGE_URL]']
@@ -70,7 +70,7 @@
 
         $values = [
             'yml' => [$server_name, $container_name, $rtmp_port, $http_port],
-            'conf' => [$rtmp_port, $maxViewers, $hlsPlaylistLength, $recInterval, $streamStart, $streamStop, $streamRecord, $http_port, $logURL],
+            'conf' => [$rtmp_port, $maxViewers, $hlsFragment, $hlsPlaylistLength, $recInterval, $streamStart, $streamStop, $streamRecord, $http_port, $logURL],
             'sh' => [$streamBlocked],
             'html' => [$mainURL, $http_port, $stream_key],
             'php' => [$mainPageURL]

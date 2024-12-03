@@ -7,6 +7,7 @@
 
     $appEnviroment          = getenv('APP_ENV');
     $maxViewers             = getenv('MAX_VIEWERS');
+    $hlsFragment            = getenv('HLS_FRAGMENT');
     $hlsPlaylistLength      = getenv('HLS_PLAYLIST_LENGTH');
     $recInterval            = getenv('MAX_STREAMING_TIME');
 

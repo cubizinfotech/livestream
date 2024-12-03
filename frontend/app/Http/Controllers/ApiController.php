@@ -43,7 +43,7 @@ class ApiController extends Controller
                 return response()->json(['status' => false, 'message' => "Something went wrong!"], 404);  
             }
         } catch (\Exception $ex) {
-            return response()->json(['status' => false, 'message' => $ex->Message()], 404);
+            return response()->json(['status' => false, 'message' => $ex->getMessage()], 404);
         }
     }
 
@@ -62,7 +62,7 @@ class ApiController extends Controller
                 return response()->json(['status' => false, 'message' => "Something went wrong!"], 404);  
             }
         } catch (\Exception $ex) {
-            return response()->json(['status' => false, 'message' => $ex->Message()], 404);
+            return response()->json(['status' => false, 'message' => $ex->getMessage()], 404);
         }
     }
 
@@ -87,7 +87,7 @@ class ApiController extends Controller
                 return response()->json(['status' => false, 'message' => "Something went wrong!"], 404);  
             }
         } catch (\Exception $ex) {
-            return response()->json(['status' => false, 'message' => $ex->Message()], 404);
+            return response()->json(['status' => false, 'message' => $ex->getMessage()], 404);
         }
     }
 
@@ -106,7 +106,7 @@ class ApiController extends Controller
                 return response()->json(['status' => false, 'message' => "Something went wrong!"], 404);  
             }
         } catch (\Exception $ex) {
-            return response()->json(['status' => false, 'message' => $ex->Message()], 404);
+            return response()->json(['status' => false, 'message' => $ex->getMessage()], 404);
         }
     }
 
@@ -119,7 +119,7 @@ class ApiController extends Controller
             }
             return view("stream.live", compact('live'));
         } catch (\Exception $ex) {
-            return response()->json(['status' => false, 'message' => $ex->Message()], 404);
+            return response()->json(['status' => false, 'message' => $ex->getMessage()], 404);
         }
     }
 
@@ -132,7 +132,7 @@ class ApiController extends Controller
             }
             return view("stream.record", compact('record'));
         } catch (\Exception $ex) {
-            return response()->json(['status' => false, 'message' => $ex->Message()], 404);
+            return response()->json(['status' => false, 'message' => $ex->getMessage()], 404);
         }
     }
 
