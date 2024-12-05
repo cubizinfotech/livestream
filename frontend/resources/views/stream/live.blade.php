@@ -57,6 +57,7 @@
                 } 
                 else if (video.canPlayType("application/vnd.apple.mpegurl")) {
                     video.src = videoSrc;
+                    video.type = "application/x-mpegURL";
                 }
 
                 $('#video').trigger('click');
