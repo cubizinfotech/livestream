@@ -143,7 +143,14 @@ class RtpmController extends Controller
             }
         } else {
             try {
-                if (is_dir($folderPath)) rmdir($folderPath);
+                if (is_dir($folderPath)) {
+                    foreach (glob("{$folderPath}/*.*") as $file) {
+                        if (is_file($file)) {
+                            unlink($file);
+                        }
+                    }
+                    rmdir($folderPath);
+                }
                 $folderPath = "storage/record/{$folderName}";
                 if (Storage::disk('s3')->exists($folderPath)) {
                     $files = Storage::disk('s3')->files($folderPath);
@@ -242,9 +249,10 @@ class RtpmController extends Controller
         $created_by = Auth::user()->id;
         $showAllTempleNameRecords = Rtmp::where('created_by', $created_by)->where('status', 1)->orderBy('id', 'DESC')->get();
         // $records = Rtmp::with('rtmp_recording')->where('stream_key', $stream_key)->where('status', 1)->first();
-        $records = Rtmp::whereHas('rtmp_recording', function($query) {
-            $query->where('status', 1);
-        })->where('stream_key', $stream_key)->where('status', 1)->first();
+        $records = Rtmp::where('stream_key', $stream_key)->where('status', 1)
+                    ->with(['rtmp_recording' => function($query) {
+                        $query->where('status', 1);
+                    }])->first();
         
         if(empty($records->id)) {
             abort(404);

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\App;
 use App\Jobs\ProcessStream;
 use Aws\S3\S3Client;
+use Illuminate\Support\Facades\Log;
 
 class ApiController extends Controller
 {
@@ -202,6 +203,31 @@ class ApiController extends Controller
         // ------------------------API testing------------------------------
         */
 
+        // -------------------------Upload S3 bucket-------------------------
+        try {
+            $s3FolderPath = "storage/record/9ik0B0rrpg0fq/9ik0B0rrpg0fq-1733996145.flv";
+            $storagePath = public_path("storage/record/9ik0B0rrpg0fq/9ik0B0rrpg0fq-1733996145.flv");
+            $streamKey = "9ik0B0rrpg0fq";
+            
+            // Ensure the S3 folder exists
+            if (!Storage::disk('s3')->exists('storage/record/' . $streamKey)) {
+                Storage::disk('s3')->makeDirectory('storage/record/' . $streamKey);
+            }
+
+            // Upload file to S3
+            Storage::disk('s3')->put($s3FolderPath, file_get_contents($storagePath));
+
+            // Clean up
+            unlink($storagePath);
+            return response()->json(['status' => true, 'message' => "Process Completed (S3)."], 200);
+        } catch (\Aws\S3\Exception\S3Exception $e) {
+            return response()->json(['status' => true, 'message' => $e->getMessage()], 500);
+        } catch (\Throwable $th) {
+            return response()->json(['status' => true, 'message' => $th->getMessage()], 500);
+        }
+        // -------------------------Upload S3 bucket-------------------------
+
+        /*
         // ------------------------Getting S3 bucket file URl------------------------------
         $bucketName = env('AWS_BUCKET');
         $keyName = 'storage/record/ljkiPdesk9Als/ljkiPdesk9Als-1732866760.flv';
@@ -220,6 +246,7 @@ class ApiController extends Controller
         echo "File URL: " . $url . "\n";
         exit;
         // ------------------------Getting S3 bucket file URl------------------------------
+        */
 
         return response()->json(['status' => true, 'message' => 'Nothing testing!'], 200);
     }

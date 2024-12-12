@@ -65,6 +65,11 @@ DockerCommand:
 		Get Container ID:
 			docker ps -q -f "name=rtmpServer"
 
+		Remove Network:
+			docker network prune
+		Network List:
+			docker network prune
+
 OBS - multiple output:
 	https://www.youtube.com/watch?v=mZnhn_pxhGg&ab_channel=TechnoShyam
 

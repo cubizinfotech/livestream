@@ -39,7 +39,7 @@ class ProcessStream implements ShouldQueue
 
         $streamKey = $data['name'];
         $streamPath = $data['path'];
-        $videoUrl = env('BACKEND_SERVER_URL') . $streamPath;
+        $videoUrl = env('BACKEND_SERVER_URL') . 'rtmp_server/' . $streamKey . '/' . $streamPath;
         $fileName = basename($streamPath);
         $newFileName = pathinfo($fileName, PATHINFO_FILENAME) . '.mp4';
 
@@ -132,10 +132,11 @@ class ProcessStream implements ShouldQueue
         $res = $this->callPostAPI($url, ['path' => $path, 'name' => $name]);
         $res = json_decode($res, true);
         
-        if (!$res['status']) {
-            $this->logs('cURL-deleteBackendFile', ['path' => $path, 'name' => $name], $res);
-            throw new \Exception("Error Processing Request: " . json_encode($res));
-        }
+        // if (!$res['status']) {
+        //     $this->logs('cURL-deleteBackendFile', ['path' => $path, 'name' => $name], $res);
+        //     throw new \Exception("Error Processing Request: " . json_encode($res));
+        // }
+        return true;
     }
 
     protected function logs($type, $req, $res)
