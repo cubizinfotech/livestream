@@ -60,9 +60,9 @@
                     <h4 class="form-title">
                         Create a Church
                     </h4>
-                    <form id="TempleForm" method="POST" class="add-form" autocomplete="off">
+                    <form id="TempleForm" method="POST" class="add-form" autocomplete="on">
                         <div class="form-group">
-                            <input type="text" name="name" class="form-control" placeholder="Enter Church Name">
+                            <input type="text" name="name" class="form-control" placeholder="Enter Church Name" autofocus>
                         </div>
                         <div class="form-btn text-end">
                             <button type="button" class="theme-btn-alt" data-bs-dismiss="modal">Cancel</button>

@@ -17,7 +17,9 @@ services:
       - ./timeout.sh:/timeout.sh
     command: /bin/sh -c "nginx -g 'daemon off;'"
     networks:
-      - livestream
+      - [NETWORK_NAME]
 networks:
-  livestream:
+  [NETWORK_NAME]:
+    name: [NETWORK_FIXED_NAME]
     driver: bridge
+    external: true

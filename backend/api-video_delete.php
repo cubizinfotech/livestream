@@ -30,11 +30,13 @@
                 // http_response_code(401);
             }
         } else {
+            throw new Exception("Required fields missing (like path, name).");
             echo json_encode(['status' => false, 'message' => 'Required fields missing (like path, name).']);
             // http_response_code(404);
         }
     } catch (Exception $th) {
         // http_response_code(500);
+        throw new Exception($th->getMessage());
         echo json_encode(['status' => false, 'message' => $th->getMessage()]);
     }
 

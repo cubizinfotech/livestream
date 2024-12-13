@@ -26,6 +26,34 @@
     loadEnv(__DIR__ . '/.env');
     require_once "./code/config.php";
 
+    // Function to get the next available subnet
+    function getNextAvailableSubnet($conn, $network_name) {
+        // Query existing allocated subnets
+        $query = "SELECT subnet FROM docker_networks WHERE allocated = 1";
+        $result = mysqli_query($conn, $query);
+        $usedSubnets = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $usedSubnets[] = $row['subnet'];
+        }
+
+        // Define a base pool of subnets
+        $baseIP = '192.168.0.0';
+        $baseCIDR = 24; // Each network gets 256 addresses
+        $subnetPool = 100; // Allow up to 100 networks
+
+        for ($i = 0; $i < $subnetPool; $i++) {
+            $subnet = long2ip(ip2long($baseIP) + ($i * (1 << (32 - $baseCIDR)))) . '/' . $baseCIDR;
+            if (!in_array($subnet, $usedSubnets)) {
+                // Mark subnet as allocated in the database
+                $insertQuery = "INSERT INTO docker_networks (subnet, allocated, network_name) VALUES ('$subnet', 1, '$network_name')";
+                mysqli_query($conn, $insertQuery);
+                return $subnet;
+            }
+        }
+
+        throw new Exception("No available subnets.");
+    }
+
     try {    
         // Query for container details
         $query = "SELECT * FROM rtmps WHERE `status` = 2 AND id = $id";
@@ -36,11 +64,27 @@
             exit;
         }
         $row = mysqli_fetch_assoc($result);
+        $name = $row["name"];
         $server_name = $row["server_name"];
         $container_name = $row["container_name"];
         $rtmp_port = $row["rtmp_port"];
         $http_port = $row["http_port"];
         $stream_key = $row["stream_key"];
+        $network_name = $name . "_network";
+        $network_fixed_name = $stream_key . "_network";
+
+        // Get the next available subnet
+        $subnet = getNextAvailableSubnet($conn, $network_fixed_name);
+
+        // Create a Docker network with the allocated subnet
+        $dockerNetworkCommand = ($appEnviroment === 'local' ? '' : 'sudo ') . 'docker network create --subnet=' . escapeshellarg($subnet) . ' ' . escapeshellarg($network_fixed_name);
+        $networkOutput = shell_exec($dockerNetworkCommand);
+
+        file_put_contents($logFile, "[$timestamp] Docker Network Creation Output: \n$networkOutput\n==============================\n\n", FILE_APPEND);
+
+        if (!$networkOutput) {
+            throw new Exception("Failed to create Docker network.");
+        }
 
         // Replace placeholders in templates
         $templateFiles = [
@@ -61,7 +105,7 @@
         }
 
         $replacements = [
-            'yml' => ['[SERVER_NAME]', '[CONTAINER_NAME]', '[RTMP_PORT]', '[HTTP_PORT]'],
+            'yml' => ['[SERVER_NAME]', '[CONTAINER_NAME]', '[RTMP_PORT]', '[HTTP_PORT]', '[NETWORK_NAME]', '[NETWORK_FIXED_NAME]'],
             'conf' => ['[RTMP_PORT]', '[MAX_VIEWERS]', '[HLS_FRAGMENT]', '[HLS_PLAYLIST_LENGTH]', '[MAX_STREAMING_TIME]', '[ON_PUBLISH]', '[ON_PUBLISH_DONE]', '[ON_RECORD_DONE]', '[HTTP_PORT]', '[STREAM_LOG]'],
             'sh' => ['[STREAM_BLOCKED]'],
             'html' => ['[MAIN_SERVER_URL]', '[HTTP_PORT]', '[STREAM_KEY]'],
@@ -69,7 +113,7 @@
         ];
 
         $values = [
-            'yml' => [$server_name, $container_name, $rtmp_port, $http_port],
+            'yml' => [$server_name, $container_name, $rtmp_port, $http_port, $network_name, $network_fixed_name],
             'conf' => [$rtmp_port, $maxViewers, $hlsFragment, $hlsPlaylistLength, $recInterval, $streamStart, $streamStop, $streamRecord, $http_port, $logURL],
             'sh' => [$streamBlocked],
             'html' => [$mainURL, $http_port, $stream_key],
@@ -117,11 +161,15 @@
             }
         } else {
             // http_response_code(500);
+            throw new Exception("Docker compose or NGINX configuration files not found!");
             echo json_encode(['status' => false, 'message' => 'Docker compose or NGINX configuration files not found!', 'data' => $output]);
         }
     } catch (Exception $th) {
         // http_response_code(500);
+        throw new Exception($th->getMessage());
         echo json_encode(['status' => false, 'message' => $th->getMessage()]);
+    } finally {
+        mysqli_close($conn);
     }
 
     if ($appEnviroment !== 'local') {
@@ -131,7 +179,6 @@
         chmod($recordPath, 0777);
     }
 
-    mysqli_close($conn);
     exit;
 
 ?>

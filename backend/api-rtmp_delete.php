@@ -39,8 +39,10 @@
         }
 
         $row = mysqli_fetch_assoc($result);
+        $name = $row["name"];
         $container_name = $row["container_name"];
         $stream_key = $row["stream_key"];
+        $network_name = $stream_key . "_network";
 
         // Execute Docker command to remove the container
         $command = $appEnviroment == 'local' ? "docker rm -f $container_name" : "sudo docker rm -f $container_name";
@@ -51,6 +53,13 @@
         file_put_contents($logFile, $logMessage, FILE_APPEND);
 
         if ($container) {
+
+             // Remove Docker network
+            $networkCommand = $appEnviroment == 'local' ? "docker network rm $network_name" : "sudo docker network rm $network_name";
+            $networkOutput = trim(shell_exec($networkCommand));
+
+            $logMessage = $networkOutput ? "[$timestamp] NETWORK DELETED ::: $network_name\n\n" : "[$timestamp] NETWORK NOT FOUND ::: Network name '$network_name'\n\n";
+            file_put_contents($logFile, $logMessage, FILE_APPEND);
 
             $folderPath = "./rtmp_server/$stream_key";
             if (is_dir($folderPath)) {
@@ -68,19 +77,24 @@
 
             $query = "DELETE FROM rtmps WHERE `id` = $id";
             mysqli_query($conn, $query);
+            $query1 = "DELETE FROM docker_networks WHERE `network_name` = '$network_name'";
+            mysqli_query($conn, $query1);
 
             echo json_encode(['status' => true, 'message' => "Container DELETED: $container"]);
             // http_response_code(200);
         } else {
             // http_response_code(404);
+            throw new Exception("Container with name '$container_name' not found.");
             echo json_encode(['status' => false, 'message' => "Container with name '$container_name' not found."]);
         }
     } catch (Exception $th) {
         // http_response_code(500);
+        throw new Exception($th->getMessage());
         echo json_encode(['status' => false, 'message' => $th->getMessage()]);
+    } finally {
+        mysqli_close($conn);
     }
 
-    mysqli_close($conn);
     exit;
 
 ?>
