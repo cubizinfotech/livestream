@@ -56,7 +56,7 @@ class RtpmController extends Controller
                 case "getLiveStreamPageLoad":
                     $records = !empty($id)
                         ? Rtmp::with('rtmp_live')->where('id', $id)->where('status', 1)->orderBy('id', 'DESC')->first()
-                        : Rtmp::whereHas('rtmp_live')->where('status', 1)->orderBy('id', 'DESC')->first();
+                        : Rtmp::whereHas('rtmp_live')->where('status', 1)->where('created_by', $created_by)->orderBy('id', 'DESC')->first();
                     /*
                     $records = !empty($id)
                         ? Rtmp::whereHas('rtmp_live', function($query) {
