@@ -34,10 +34,17 @@ class ApiController extends Controller
                 }
             }
             else if(isset($getRtmp->id)) {
+                $url = env('STREAM_DELETE_URL');
+                $ApiReqData = [
+                    'name' => $request->name,
+                ];
+                // $this->callAPI($url, $ApiReqData);
+
                 $insertRtmpLiveData = [
                     'rtmp_id' => $getRtmp->id,
                 ];
                 RtmpLive::create($insertRtmpLiveData);
+                
                 return response()->json(['status' => true, 'message' => 'Stream started successfully.'], 200);
             }
             else {
